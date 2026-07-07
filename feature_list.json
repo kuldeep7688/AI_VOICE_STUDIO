@@ -1,0 +1,249 @@
+[
+  {
+    "id": "feat-doc-spec",
+    "name": "Design Spec Document",
+    "description": "Approved design specification for the MVP covering all design decisions (polling over WebSocket, orchestrated backend over thin proxy, tabbed studio UI, no auth, local filesystem storage). Documents the full API surface (12 endpoints), backend file structure, frontend component tree with 3 tabs and ~15 components, job system design, pipeline flow for Studio Recorder, and error handling strategy.",
+    "files": "docs/superpowers/specs/2026-07-06-ai-voice-studio-mvp-design.md",
+    "status": "completed",
+    "evidence": "Spec written to disk, user reviewed and approved"
+  },
+  {
+    "id": "feat-doc-plan",
+    "name": "Implementation Plan",
+    "description": "Step-by-step implementation plan with 22 tasks across 9 phases. Each task contains complete code for every step (no TODOs/placeholders), exact file paths, test code, commit messages, and expected outputs. Phases: Project Scaffolding, Backend Core (models + services), Nvidia Client + Job System, Backend Routers (6 routers), Frontend Core Infrastructure (API client + 5 hooks), Frontend App Shell, Common Components, Frontend Tabs (3 tabs), Testing. Includes self-review section verifying spec coverage, placeholder scan, and type consistency.",
+    "files": "docs/superpowers/plans/2026-07-06-ai-voice-studio-mvp.md",
+    "status": "completed",
+    "evidence": "Plan written to disk, all 22 tasks have complete code, 3016 lines"
+  },
+  {
+    "id": "feat-doc-arch",
+    "name": "Architecture Document",
+    "description": "System architecture documentation with ASCII system diagram showing Nvidia NIM backend pipeline. Covers backend file structure (13 files across routers/services), all 12 API endpoints with request/response formats, job lifecycle (create → poll → expire), frontend component tree with 3 tabs, data flow diagrams for both Voice Cloning and Studio Pipeline, error handling strategy per layer, and NIM model endpoints list.",
+    "files": "docs/ARCHITECTURE.md",
+    "status": "completed",
+    "evidence": "Architecture doc written to disk, covers all 12 endpoints and data flows"
+  },
+  {
+    "id": "feat-doc-product",
+    "name": "Product Document",
+    "description": "Product-level specification covering MVP features (Voice Cloning with upload/record, Studio Recorder with full pipeline, Library for voices and clips), three user flows with step-by-step walkthroughs, future feature roadmap (multilingual TTS, LipSync, real-time voice chat), tech stack table, and design decisions summary.",
+    "files": "docs/PRODUCT.md",
+    "status": "completed",
+    "evidence": "Product doc written to disk, covers all MVP user flows"
+  },
+  {
+    "id": "feat-doc-agents",
+    "name": "Agent Configuration",
+    "description": "OpenCode project configuration file (AGENTS.md) with tech stack, commands for dev/test/lint/typecheck, conventions for API design (job_id polling pattern, router splitting by domain, single nvidia_client), and key file reference table. Used by AI agents to understand project context.",
+    "files": "AGENTS.md",
+    "status": "completed",
+    "evidence": "AGENTS.md written to disk, referenced by this session"
+  },
+  {
+    "id": "feat-doc-init-script",
+    "name": "Init Check Script",
+    "description": "Shell script that verifies project compiles and servers boot. Runs 8 checks: Python 3.11+, pip install, import sanity, uvicorn boots and responds to health endpoint, Node 18+, npm install, TypeScript type-check (tsc --noEmit), Vite production build. Exits with non-zero on any failure. Idempotent — creates venv and node_modules if missing.",
+    "files": "init.sh",
+    "status": "completed",
+    "evidence": "Script written to disk, syntax verified with bash -n"
+  },
+  {
+    "id": "feat-backend-scaffold",
+    "name": "Backend Scaffolding",
+    "description": "FastAPI application entry point with CORS middleware (localhost:5173), static file serving for /audio/, router includes for all 6 domain routers. Config via pydantic-settings reading from .env (NVIDIA_API_KEY, API_BASE_URL, STORAGE_DIR). Upload directories (voices, clips, recordings) created on startup. Health endpoint and models listing endpoint. Uvicorn dev server with --reload.",
+    "files": "backend/main.py, backend/config.py, backend/requirements.txt, backend/.env.example",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-models",
+    "name": "Pydantic Schemas",
+    "description": "All request and response Pydantic v2 models. Request models: TTSCloneRequest (voice_id + text), StudioPipelineRequest (steps + optional language/voice_id), VoiceCreateRequest. Response models: VoiceResponse, ClipResponse, JobResponse with nested JobResult and JobError. Enums: JobStatus (queued/processing/done/failed), PipelineStep (clean/transcribe/translate/revoice), Language (en/fr/es/de/hi). Audio files arrive via UploadFile multipart, never embedded in JSON.",
+    "files": "backend/models.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-audio-service",
+    "name": "Audio Service",
+    "description": "WAV file validation and processing. Validates RIFF/WAVE header, reads channels/sample_rate/bits_per_sample, calculates duration from data_size. Raises AudioValidationError for invalid files or duration exceeding limits (15s for voice samples, 60s for recordings). Optional mono conversion for stereo inputs using sample averaging.",
+    "files": "backend/services/audio_service.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-storage",
+    "name": "Storage Service",
+    "description": "Local filesystem CRUD operations for audio files. Saves voice samples (with 15s duration validation), clips, and recordings as UUID-named WAV files under backend/uploads/{voices,clips,recordings}/. Provides path resolution for serving via /audio/ URL prefix. Delete operations return boolean success. All operations validate directory existence.",
+    "files": "backend/services/storage.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-nvidia-client",
+    "name": "Nvidia NIM Client",
+    "description": "Single async httpx client wrapping three Nvidia NIM API endpoints. Methods: tts_clone(voice_audio, text) sends reference WAV + text, returns synthesized WAV. asr_transcribe(audio, language) returns transcription text. asr_translate(audio, target_language) returns (transcribed_text, translated_text) tuple. bnr_denoise(audio) returns clean WAV. Automatic retry on 429/503 status codes with 1s backoff. 120-second timeout for long generations. Singleton pattern via module-level instance.",
+    "files": "backend/nvidia_client.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-job-queue",
+    "name": "In-Memory Job Queue",
+    "description": "Thread-safe in-memory job queue using asyncio. create_job() returns j_<uuid12> ID. get_job() returns current state with status, progress percentage, current step name, steps_completed/total counts, result object, and error info. run_job() wraps async task execution, auto-sets status to processing/failed/done. Background cleanup task removes expired jobs (1 hour TTL) every 15 minutes. No external dependencies (no Redis/Postgres).",
+    "files": "backend/job_manager.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-tts",
+    "name": "TTS Clone Endpoint",
+    "description": "POST /api/tts/clone — accepts JSON body with voice_id (UUID of saved voice sample) and text (1-5000 chars). Creates job, spawns background asyncio task that loads the voice reference WAV from disk, calls nvidia_client.tts_clone(), and saves the result to uploads/clips/ as a WAV file. Returns job_id immediately. Result exposes audio_url pointing to /audio/clips/<filename>.wav for frontend playback.",
+    "files": "backend/routers/tts.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-asr",
+    "name": "ASR Endpoints",
+    "description": "Two endpoints for speech-to-text. POST /api/asr accepts multipart audio file, returns job_id, background task calls nvidia_client.asr_transcribe() and stores text result. POST /api/asr/translate accepts audio + target_language (enum: en/fr/es/de/hi), returns job_id, background task calls nvidia_client.asr_translate() and stores both transcribed text and translated text. Results include text and translated_text fields in JobResult.",
+    "files": "backend/routers/asr.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-cleanup",
+    "name": "BNR Cleanup Endpoint",
+    "description": "POST /api/clean — accepts multipart audio file, returns job_id. Background task sends audio through nvidia_client.bnr_denoise() using Nvidia's BNR model for background noise removal. Cleaned audio saved to uploads/clips/ as WAV file. Result exposes audio_url for playback. Useful as standalone step or as part of studio pipeline.",
+    "files": "backend/routers/cleanup.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-studio-pipeline",
+    "name": "Studio Pipeline Endpoint",
+    "description": "POST /api/studio/pipeline — accepts multipart audio + comma-separated steps string + optional target_language + optional voice_id. Orchestrates up to 4 sequential steps: clean (BNR denoise), transcribe (ASR), translate (ASR + translation, requires target_language), revoice (TTS clone, requires voice_id). Each step updates job progress with current step name and step count. Revoice step reads transcription from previous step (uses translated_text if available, falls back to text). Results accumulate in JobResult with text, translated_text, and final audio_url.",
+    "files": "backend/routers/studio.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-library",
+    "name": "Library CRUD Endpoints",
+    "description": "RESTful CRUD for saved voices and audio clips. GET /api/voices returns all voices sorted by created_at desc, each with id, name, filename, duration_secs. POST /api/voices saves multipart audio + name, validates duration (max 15s), stores WAV to uploads/voices/ and metadata to JSON index. DELETE /api/voices/{id} removes both file and metadata. Same pattern for /api/clips with duration and download support. All operations return proper HTTP status codes (200, 201, 204, 404).",
+    "files": "backend/routers/library.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-backend-jobs",
+    "name": "Job Polling Endpoint",
+    "description": "GET /api/jobs/{job_id} — returns full job state for frontend polling. Response includes: job_id, status (queued/processing/done/failed), progress (0-100 integer), current step name (null for queued/done), steps_completed and total_steps (for pipeline), result object with audio_url/text/translated_text, error object with stage and message for failures, and ISO-8601 created_at timestamp. Returns 404 for unknown job IDs.",
+    "files": "backend/routers/jobs.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-scaffold",
+    "name": "Frontend Scaffolding",
+    "description": "Vite + React 18 + TypeScript project with TailwindCSS v4 via @tailwindcss/vite plugin. Dark theme default via color-scheme: dark in global CSS. Vite dev server proxies /api and /audio to backend at localhost:8000. Node 18+ required.",
+    "files": "frontend/vite.config.ts, frontend/index.html, frontend/src/main.tsx, frontend/src/App.css",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-api-client",
+    "name": "API Client",
+    "description": "Single api.ts module with all HTTP calls to backend. Functions: ttsClone(voiceId, text) → job_id, transcribe(audio) → job_id, translate(audio, lang) → job_id, cleanAudio(audio) → job_id, runPipeline(audio, steps, lang?, voiceId?) → job_id, getJob(jobId) → JobResponse, saveVoice(name, audio) → Voice, getVoices() → Voice[], deleteVoice(id), getClips() → Clip[], deleteClip(id). Plus blobUtils.ts with blobToUrl, downloadBlob, formatDuration helpers.",
+    "files": "frontend/src/lib/api.ts, frontend/src/lib/blobUtils.ts",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-hooks",
+    "name": "Custom Hooks",
+    "description": "Five React hooks for reusable state logic. useJobPolling(jobId) polls GET /api/jobs/:id every 2 seconds, returns { status, progress, step, steps_completed, total_steps, result, error }, auto-stops on done/failed. useRecorder() wraps MediaRecorder API, returns { isRecording, duration, audioBlob, error, start, stop }, tracks recording duration with 1s interval. useAudioPlayer(url) wraps Web Audio API, returns { isPlaying, duration, currentTime, volume, play, pause, seek, setVolume }. useVoices() and useClips() handle fetch/create/delete with local state sync.",
+    "files": "frontend/src/hooks/useJobPolling.ts, frontend/src/hooks/useRecorder.ts, frontend/src/hooks/useAudioPlayer.ts, frontend/src/hooks/useVoices.ts, frontend/src/hooks/useClips.ts",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-design-tokens",
+    "name": "Design Tokens + Global Styles",
+    "description": "Establish visual foundation matching figma_design/*.png. Create globals.css with CSS custom properties for colors (--bg #0a0a0a, --surface #111, --border #1f1f1f, --text #e5e5e5, --text-muted #8a8a8a, --accent #76b900 Nvidia green, voice colors green/blue/purple/orange, --danger), typography (--font-sans Inter, --font-mono JetBrains Mono), motion (--ease-out cubic-bezier(0.23, 1, 0.32, 1), --ease-in-out cubic-bezier(0.77, 0, 0.175, 1)). Mirror tokens into tailwind.config.ts theme.extend. Add prefers-reduced-motion base rules removing transforms. Import Inter + JetBrains Mono via CDN/self-host. This must be built BEFORE any component work — every other UI feature depends on these tokens.",
+    "files": "frontend/src/globals.css, frontend/tailwind.config.ts, frontend/index.html",
+    "visual_reference": "figma_design/voice_cloning_page.png, figma_design/studio_recorder_page.png, figma_design/library_page.png, figma_design/library_clips_page.png",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-ui-primitives",
+    "name": "Shared UI Primitives",
+    "description": "Reusable visual primitives under frontend/src/components/ui/. SectionLabel (mono uppercase 11px letter-spaced 0.14em, muted color — used for RECORDER, PIPELINE, SAMPLE INPUT, etc.). Panel (bordered surface card, radius 8, --border). Button with variants primary (accent green bg, dark text)/secondary (surface)/ghost/outline — all get scale(0.97) on :active with 160ms ease-out. IconButton (square icon-only, 32-40px). Pill (small mono uppercase tag for screen-header model badges). StatusDot (colored circle with optional pulse animation via CSS opacity). VoiceTag (StatusDot + mono voice name). WaveformBars (renders N vertical bars, props: bars: number[], color: string — used in voice cards and recorder). HelpFab (bottom-right fixed circular ? button). Every pressable element follows Emil Kowalski rules from AGENTS.md.",
+    "files": "frontend/src/components/ui/SectionLabel.tsx, frontend/src/components/ui/Panel.tsx, frontend/src/components/ui/Button.tsx, frontend/src/components/ui/IconButton.tsx, frontend/src/components/ui/Pill.tsx, frontend/src/components/ui/StatusDot.tsx, frontend/src/components/ui/VoiceTag.tsx, frontend/src/components/ui/WaveformBars.tsx, frontend/src/components/ui/HelpFab.tsx",
+    "visual_reference": "figma_design/voice_cloning_page.png, figma_design/studio_recorder_page.png, figma_design/library_page.png, figma_design/library_clips_page.png",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-app-shell",
+    "name": "App Shell + Sidebar",
+    "description": "Root application shell with React Context for global state (activeScreen). App.tsx renders a two-region layout: fixed 220px Sidebar on the left + main region on the right that renders the active screen. Sidebar contents: brand block (NVIDIA in mono accent green, AI VOICE STUDIO in sans bold white, v0.1 · MVP in mono muted), nav items with lucide-react icons (Voice Cloning: wand-2, Studio Recorder: radio, Library: library) — active row has --accent-bg background + 2px full-height green left bar + green text + green icon, inactive rows are muted. Divider. Footer with MODELS ACTIVE SectionLabel + 3 StatusDot rows (magpie-tts-zeroshot, canary-1b, bnr) with pulsing green dots. ScreenHeader component: mono uppercase title (14px letter-spaced) + optional model Pill + settings gear IconButton top-right. Nav clicks are instant (no animation). Screen switches use fade opacity transition (100ms ease-out). Every pressable element has scale(0.97) on :active with 160ms ease-out. MUST visually match all 4 figma_design PNGs regarding sidebar layout.",
+    "files": "frontend/src/App.tsx, frontend/src/context/AppContext.tsx, frontend/src/components/Sidebar.tsx, frontend/src/components/ScreenHeader.tsx",
+    "visual_reference": "figma_design/voice_cloning_page.png (sidebar and header pattern visible on all 4 screens)",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-common-components",
+    "name": "Common Components",
+    "description": "Three reusable UI components following Emil Kowalski philosophy. AudioPlaybackBar: play/pause button (uses ui/IconButton) with scale(0.97) on :active, range slider for seek with custom easing, duration display in mono muted. ErrorBanner: dismissible banner with --danger accent, enters with ease-out at 200ms, exits faster at 100ms. JobPollingOverlay: fixed bottom-right overlay, enter from scale(0.95) + opacity(0) with 250ms ease-out, exit at 150ms. Spinner uses CSS animation (runs off main thread). prefers-reduced-motion removes transforms, keeps opacity changes. Hover states gated behind @media (hover: hover) and (pointer: fine).",
+    "files": "frontend/src/components/common/AudioPlaybackBar.tsx, frontend/src/components/common/ErrorBanner.tsx, frontend/src/components/common/JobPollingOverlay.tsx",
+    "visual_reference": null,
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-voice-cloning",
+    "name": "Voice Cloning Screen",
+    "description": "Two-column layout inside a shared Panel matching figma_design/voice_cloning_page.png. Left column (~340px): SectionLabel 'SAMPLE INPUT' + helper text 'Record or upload a 10-15 s voice sample' + waveform placeholder box (140px tall, dashed border when empty via WaveformBars in empty state) + Record button (primary, mic icon) side-by-side with square upload IconButton + SectionLabel 'VOICE NAME' + text input (placeholder 'e.g. My Voice') + [Save Voice] Button (disabled variant until valid) + SectionLabel 'MODEL' + StatusDot pulsing green with mono 'magpie-tts-zeroshot'. Right column: SectionLabel 'GENERATE SPEECH' + helper 'Type text and select a cloned voice to synthesize' + large multi-line textarea (~180px min height, border-color 200ms ease-out on focus) + row 'N chars · N words' (left mono muted) and '~Ns estimated output' (right mono muted) + SectionLabel 'CLONED VOICE' + ClonedVoicePicker component: 2×2 grid of voice picker cards (VoiceTag on left with colored dot + name, duration on right mono muted; selected card has --accent border + --accent-bg fill, 200ms ease-out transition) + full-width GENERATE Button (primary, wand-2 icon, mono uppercase text). Motion: keyboard shortcuts trigger instantly, disabled states use opacity/color only. Wire to POST /api/tts/clone + useJobPolling.",
+    "files": "frontend/src/components/VoiceCloning/VoiceCloningScreen.tsx, frontend/src/components/VoiceCloning/VoiceSampleInput.tsx, frontend/src/components/VoiceCloning/ClonedVoicePicker.tsx, frontend/src/components/VoiceCloning/TextInput.tsx, frontend/src/components/VoiceCloning/GenerateButton.tsx",
+    "visual_reference": "figma_design/voice_cloning_page.png",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-studio-recorder",
+    "name": "Studio Recorder Screen",
+    "description": "Matches figma_design/studio_recorder_page.png exactly. Screen header includes Pill showing 'canary-1b · BNR' next to STUDIO RECORDER title. Body has two vertically stacked Panels. Top Panel (~260px tall): SectionLabel 'RECORDER' + centered ~64px mic circle (accent-green ring, dark fill, lucide mic icon) + caption 'Click to start recording' below. Recording state: red opacity-pulse (no transform) around circle, WaveformViz replaces caption, timer shows. Bottom section: SectionLabel 'PIPELINE' with right-aligned 'N stages active' counter (mono muted, updates reactively). Row of 4 PipelineStageCard components with lucide chevron-right separators between them (order: Clean/BNR/zap, Transcribe/canary-1b/activity, Translate/canary-1b/languages, Re-voice/magpie-tts/wand-2). Each card: top-left icon + top-right checkbox pill (filled --accent green when selected) + title + model name (mono muted). Selected cards have --accent border + subtle --accent-bg tint (transition background-color 200ms ease-out); unselected have --border border and muted text. Full-width RUN PIPELINE Button (primary accent-green, mono uppercase, 48px tall). StageOutput results stagger in with 40ms delay between sections (translateY(8px) + opacity). Keyboard R starts/stops recording instantly. Wire to POST /api/studio/pipeline + useJobPolling.",
+    "files": "frontend/src/components/StudioRecorder/StudioRecorderScreen.tsx, frontend/src/components/StudioRecorder/WaveformViz.tsx, frontend/src/components/StudioRecorder/RecordControls.tsx, frontend/src/components/StudioRecorder/PipelineStages.tsx, frontend/src/components/StudioRecorder/PipelineStageCard.tsx, frontend/src/components/StudioRecorder/RunPipelineButton.tsx, frontend/src/components/StudioRecorder/StageOutput.tsx",
+    "visual_reference": "figma_design/studio_recorder_page.png",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-frontend-library",
+    "name": "Library Screen",
+    "description": "Matches figma_design/library_page.png (Voices tab) and library_clips_page.png (Clips tab). LibraryTabs component: horizontal tabs 'Voices (N)' and 'Clips (N)' with active tab underlined with 2px --accent green + green text, inactive tabs muted; right-aligned [+ Add] outline Button (green border, plus icon, mono 'Add'). Uses clip-path technique for seamless active tab color transition. Voices tab body: 2-column grid (gap 20px) of VoiceCard components. VoiceCard: Panel with 2px left color-bar in voice color (voice-green/blue/purple/orange) + voice name (16px semibold) + metadata row '{duration}s · {date} · zero-shot' (mono muted) + WaveformBars (16 bars, voice color, varying heights, static) + full-width [▷ Play] Button (secondary variant, subtle surface, play triangle icon, muted text). Clips tab body: vertical list (gap 12px) of ClipRow components. ClipRow: Panel row (~72px tall) with left-aligned square play IconButton (subtle surface) + text preview (16px, first line of clip text) + metadata row below (colored StatusDot + voice name mono + duration mono + timestamp mono muted + model name mono muted). Cards/rows stagger in with 50ms delay, 200ms ease-out (translateY(8px) + opacity → identity). Hover raises to --surface-hover (gated behind hover: hover). Empty state fades in with 300ms ease-out. prefers-reduced-motion: no stagger delay. Wire to GET /api/voices and GET /api/clips.",
+    "files": "frontend/src/components/Library/LibraryScreen.tsx, frontend/src/components/Library/LibraryTabs.tsx, frontend/src/components/Library/VoiceCard.tsx, frontend/src/components/Library/ClipRow.tsx",
+    "visual_reference": "figma_design/library_page.png, figma_design/library_clips_page.png",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-test-backend",
+    "name": "Backend Tests",
+    "description": "pytest suite with unit + integration tests. Unit tests in test_models.py, test_jobs.py test Pydantic schemas and job_manager in isolation. Integration tests use httpx.AsyncClient with ASGI transport (no real server). conftest.py provides sample_wav fixture (1 second of 16kHz silence) and async client fixture. Tests: create/get/update/missing job, TTS clone returns job_id, ASR transcribe/translate accept audio, save/list/delete voice, voice metadata JSON persistence, delete nonexistent returns 404, health endpoint. nvidia_client.py is mockable via FastAPI dependency override. Job queue cleared via autouse fixture.",
+    "files": "backend/tests/conftest.py, backend/tests/test_models.py, backend/tests/test_jobs.py, backend/tests/test_tts.py, backend/tests/test_asr.py, backend/tests/test_library.py",
+    "status": "pending",
+    "evidence": null
+  },
+  {
+    "id": "feat-test-frontend",
+    "name": "Frontend Tests",
+    "description": "Vitest + React Testing Library test suite. Component tests render with jsdom environment. Setup imports @testing-library/jest-dom matchers. Tests: App renders title and all three tab labels. Hook tests planned for useJobPolling (happy path + error + done cleanup), useRecorder (start/stop, permission error), useAudioPlayer (play/pause/seek state). Vitest configured via vite.config.ts with globals: true, environment: jsdom, setupFiles. Mock Service Worker (MSW) for API call mocking in component tests.",
+    "files": "frontend/tests/setup.ts, frontend/tests/components/App.test.tsx",
+    "status": "pending",
+    "evidence": null
+  }
+]
