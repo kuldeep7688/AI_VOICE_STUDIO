@@ -35,6 +35,16 @@ Thumbs.db
 # MCP
 .playwright-mcp/
 
+# Generated uploads
+backend/uploads/
+
+# Test cache
+.pytest_cache/
+backend/.pytest_cache/
+
+# OpenCode
+.opencode/
+
 # Other
 .docs/superpowers/
 .figma_design/
