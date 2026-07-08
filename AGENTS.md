@@ -1,16 +1,10 @@
 # AGENTS.md
 
-## Project: AI Voice Studio
+## Project
 
-A FastAPI + React app for exploring Nvidia's speech and audio models. Record, clone, clean, transcribe, translate, and re-voice audio content with a clean studio-style UI.
+AI Voice Studio — A FastAPI + React app for exploring Nvidia's speech and audio models. Record, clone, clean, transcribe, translate, and re-voice audio content with a clean studio-style UI.
 
-## Tech Stack
-
-- **Backend:** FastAPI (Python 3.11+), httpx (async NIM API calls), Uvicorn
-- **Frontend:** React 18 (Vite), TypeScript, TailwindCSS, Web Audio API, MediaRecorder API
-- **Nvidia NIM Models:** magpie-tts-zeroshot, canary-1b-asr, bnr
-
-## Commands
+## Startup
 
 ```bash
 # Init check (verify project compiles, server boots)
@@ -42,51 +36,125 @@ cd backend && ruff check .
 cd frontend && npm run lint
 ```
 
-## UI Design Principles (Emil Kowalski)
+## Rules
 
-- **Button press feedback:** `transform: scale(0.97)` on `:active`, 160ms `ease-out` — every pressable element
-- **Custom easing curves:** No built-in CSS easings. Use `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)`
-- **Never animate from `scale(0)`** — start from `scale(0.95)` with `opacity: 0`
-- **No animation on keyboard actions** — Space/play, R/record, Esc/stop trigger instantly
-- **Hover animations** gated behind `@media (hover: hover) and (pointer: fine)`
-- **UI animations < 300ms** — tooltips 125-200ms, dropdowns 150-250ms, modals 200-500ms
-- **`prefers-reduced-motion`** — keep opacity/color transitions, remove transforms
-- **Only animate `transform` and `opacity`** — never `padding`, `margin`, `height`, `width`
-- **Popovers scale from trigger** via `transform-origin: var(--radix-popover-content-transform-origin)`
-- **Stagger list entries** with 30-80ms delay between items, `translateY(8px)` + `opacity`
-- **Exit faster than enter** — asymmetric timing (e.g., enter 300ms, exit 150ms)
+- Features implemented one at a time — complete each feature fully (code, tests, verification) before starting the next
+- Only update `feature_list.json` status to "completed" after solid evidence (tests passing, server booting, build succeeding)
+- Always update `agent-progress.md` and `session-handoff.md` at the end of every session
+- Verification before completion — run verification commands before claiming work is done
 
-## Testing
-
-- **Backend:** pytest + httpx.AsyncClient (ASGI transport, no real server needed). Tests in `backend/tests/`.
-  - Unit tests for models, job_manager, audio_service, storage
-  - Integration tests for all API endpoints using mocked `nvidia_client`
-- **Frontend:** Vitest + React Testing Library. Tests in `frontend/tests/`.
-  - Component tests rendering with jsdom
-  - Hook tests for useJobPolling, useRecorder, useAudioPlayer
-- **Coverage targets:** All 12 API endpoints tested, all components render-tested, all hooks cover happy + error paths
-- **Mock strategy:** `nvidia_client.py` is the only external dependency — mock via FastAPI dependency override during tests
-
-## Conventions
-
-- **All API calls return job_ids** -- POST creates a job, GET /api/jobs/:id polls status
-- **Backend routers** split by domain: tts, asr, cleanup, studio, library, jobs
-- **One nvidia_client.py** -- single httpx async client for all NIM API calls
-- **In-memory job queue** -- no Redis/Postgres for MVP
-- **Audio files stored** in backend/uploads/{voices,clips,recordings}/
-- **No authentication** -- single-user local studio
-- **React Context only** -- no Redux/Zustand for state management
-- **TailwindCSS dark theme default** -- studio aesthetic
-- **TypeScript strict mode** for frontend
-
-## Key Files
+## Project Context
 
 | File | Purpose |
 |------|---------|
-| `docs/superpowers/specs/2026-07-06-ai-voice-studio-mvp-design.md` | Approved design spec |
+| `docs/product-specs/index.md` | Product requirements and user flows |
+| `docs/design-docs/architecture.md` | System architecture and API design |
+| `docs/design-docs/core-beliefs.md` | Core design philosophy and principles |
+| `docs/design-docs/ai-voice-studio-mvp-design.md` | Approved design spec (visual system, components) |
+| `docs/exec-plans/completed/2026-07-06-ai-voice-studio-mvp.md` | Implementation plan |
+| `docs/exec-plans/tech-debt-tracker.md` | Technical debt tracking |
+| `docs/generated/db-schema.md` | Database/storage schema reference |
 | `backend/main.py` | FastAPI app entry point |
 | `backend/config.py` | Environment config (NVIDIA_API_KEY, etc.) |
 | `backend/nvidia_client.py` | Async NIM API client |
 | `backend/job_manager.py` | In-memory job queue |
 | `frontend/src/lib/api.ts` | All HTTP calls to backend |
 | `frontend/src/hooks/useJobPolling.ts` | Polls job status every 2s |
+| `feature_list.json` | Feature tracking with status and evidence |
+| `agent-progress.md` | Chronological session log |
+| `session-handoff.md` | Previous session summary for handoff |
+
+## Docs Hierarchy
+
+```
+docs/
+├── design-docs/
+│   ├── index.md
+│   ├── core-beliefs.md
+│   ├── architecture.md
+│   └── ai-voice-studio-mvp-design.md
+├── exec-plans/
+│   ├── active/
+│   │   └── 2026-07-06-comprehensive-logging.md
+│   ├── completed/
+│   │   ├── 2026-07-06-ai-voice-studio-mvp.md
+│   └── tech-debt-tracker.md
+├── generated/
+│   └── db-schema.md
+└── product-specs/
+    ├── index.md
+    └── new-user-onboarding.md
+```
+
+## Conventions
+
+- **API:** All API calls return job_ids — POST creates a job, GET /api/jobs/:id polls status
+- **Backend routers:** Split by domain: tts, asr, cleanup, studio, library, jobs
+- **NIM client:** Single `nvidia_client.py` — one httpx async client for all NIM API calls
+- **Job queue:** In-memory dict with asyncio background tasks, auto-expire after 1 hour
+- **Storage:** Audio files in `backend/uploads/{voices,clips,recordings}/`
+- **Auth:** No authentication — single-user local studio
+- **State:** React Context only — no Redux/Zustand
+- **Theme:** TailwindCSS dark theme default — studio aesthetic
+- **TypeScript:** Strict mode for frontend
+- **Polling:** 2-second interval for job status updates
+
+## Definition of Done
+
+A feature is complete only when:
+- [ ] Code implemented following conventions
+- [ ] Tests written and passing (backend pytest, frontend vitest)
+- [ ] TypeScript compiles without errors (`npm run typecheck`)
+- [ ] Lint passes (backend ruff, frontend eslint)
+- [ ] Vite build succeeds
+- [ ] Server boots successfully
+- [ ] Evidence recorded in `feature_list.json`
+- [ ] Session documented in `agent-progress.md` and `session-handoff.md`
+
+## Session Handoff
+
+- **`agent-progress.md`** — Chronological log of all sessions with:
+  - Date and time range
+  - Things done in the session
+  - Next steps
+  - Learnings / cautions
+- **`session-handoff.md`** — Only the previous session's info (overwritten each session)
+- Always update both files before ending a session
+
+## Testing
+
+**Backend:** pytest + httpx.AsyncClient (ASGI transport, no real server needed)
+- Tests in `backend/tests/`
+- Unit tests for models, job_manager, audio_service, storage
+- Integration tests for all 12 API endpoints using mocked `nvidia_client`
+- Mock via FastAPI dependency override
+
+**Frontend:** Vitest + React Testing Library
+- Tests in `frontend/tests/`
+- Component tests rendering with jsdom
+- Hook tests for useJobPolling, useRecorder, useAudioPlayer
+
+**Coverage targets:**
+- All 12 API endpoints tested
+- All components render-tested
+- All hooks cover happy + error paths
+
+## Clean State
+
+Before starting work:
+```bash
+# Verify environment
+bash init.sh
+
+# Check backend
+cd backend && source venv/bin/activate && pytest -v
+
+# Check frontend
+cd frontend && npm test && npx tsc --noEmit && npm run build
+```
+
+Expected state:
+- Backend venv active, all tests passing
+- Frontend node_modules installed, TypeScript clean, build succeeds
+- `backend/.env` contains valid `NVIDIA_API_KEY`
+- No uncommitted git changes unless feature work in progress

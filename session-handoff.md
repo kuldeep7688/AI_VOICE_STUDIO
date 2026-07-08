@@ -1,40 +1,32 @@
 # Session Handoff
 
-## Where We Left Off (2026-07-06)
+## Session 4 — 2026-07-07 ~04:20–05:00
 
-Completed the full design phase for AI Voice Studio MVP. All design decisions made and documented.
+UI Refresh brainstorming and planning completed. Design doc and implementation plan written. 4 new features added to `feature_list.json` in "pending" status.
 
-## Context Summary
+### Done
+- Brainstormed UI refresh: dual theme system, grid layouts, sidebar redesign
+- Created design doc: `docs/design-docs/2026-07-07-ui-refresh-theme-system.md`
+- Created implementation plan: `docs/exec-plans/active/2026-07-07-ui-refresh-theme-system.md`
+- Added 4 features to `feature_list.json`:
+  - `feat-ui-theme-system` (Phase 1 — Theme System + Shell)
+  - `feat-ui-voice-cloning` (Phase 2 — Voice Cloning grid)
+  - `feat-ui-studio-recorder` (Phase 3 — Studio Recorder grid)
+  - `feat-ui-library` (Phase 4 — Library grid)
+- Updated `agent-progress.md` and `session-handoff.md`
 
-**Project:** AI Voice Studio -- FastAPI + React app using Nvidia NIM speech models
-**Scope:** MVP = Voice Cloning + Studio Recorder + Library
-**Status:** Design approved, implementation plan written
+### Next Steps
+- Execute Phase 1: Theme System + Shell Refactor
+  - Update globals.css with dual theme tokens (`[data-theme="dark"]` / `[data-theme="light"]`)
+  - Create `ThemeContext.tsx` with localStorage persistence
+  - Refresh sidebar (rounded capsule active nav, Sun/Moon toggle)
+  - Verify all UI primitives use CSS vars (no hardcoded hex)
+  - Write ThemeToggle tests
+  - Run `cd frontend && npm test && npx tsc --noEmit && npm run build`
 
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `docs/superpowers/specs/2026-07-06-ai-voice-studio-mvp-design.md` | Approved design spec |
-| `AGENTS.md` | OpenCode project instructions |
-| `docs/ARCHITECTURE.md` | System architecture documentation |
-| `docs/PRODUCT.md` | Product spec and user flows |
-| `agent-progress.md` | Task tracking |
-| `README.md` | Original project proposal |
-
-## Design Decisions (don't revisit)
-
-- **Polling** for async NIM calls (not WebSocket, not blocking)
-- **Orchestrated backend** with in-memory job queue (not thin proxy)
-- **Tabbed studio UI** (not sidebar, not dashboard)
-- **No auth** (single-user local tool)
-- **Local filesystem** storage (not S3)
-- **React Context** for state (no Redux/Zustand)
-
-## Next Step
-
-Implementation plan written at `docs/superpowers/plans/2026-07-06-ai-voice-studio-mvp.md`. Ready to execute when you are.
-
-### To resume:
-1. Load the plan from `docs/superpowers/plans/2026-07-06-ai-voice-studio-mvp.md`
-2. Execute tasks 1-22 sequentially
-3. The `agent-progress.md` tracks all pending tasks
+### Learnings / Cautions
+- Current accent is NVIDIA green `#76b900` — replace with amber `#DDAA77` / terracotta `#C87A53`
+- Theme via `data-theme` attribute on `<html>` element, persisted in localStorage
+- TailwindCSS v4: new color tokens must be registered in both `@theme` block and CSS var definitions
+- Voice color tokens (green/blue/purple/orange) remain shared between themes
+- See `agent-progress.md` and `docs/exec-plans/active/2026-07-07-ui-refresh-theme-system.md` for full details
