@@ -147,3 +147,66 @@
 - CSS `transition-property` should be limited to `background-color, color, border-color` for smooth theme toggles (avoid transitioning transforms)
 - TailwindCSS v4 requires `@theme` block to register CSS vars — any new color tokens need registration there
 - Current accent is NVIDIA green `#76b900` — replace with amber `#DDAA77` / terracotta `#C87A53`
+
+---
+
+## Session 5 — 2026-07-18 (Stitch Studio UI Implementation)
+
+**Time:** ~01:45–02:00
+
+### Done
+- Implemented **Stitch Studio UI** 7-phase implementation plan:
+  - **Phase 1:** Design System Foundation — dual-theme `globals.css` (dark: navy/green accents; light: white/lavender), `@theme` block with all tokens, `[data-theme]` CSS variables, glass-panel utilities, theme transition. `index.html` with Material Symbols CDN + theme-preservation inline script. `ThemeContext.tsx` with localStorage persistence. Removed `lucide-react`, created `Icon.tsx` (Material Symbols wrapper), updated 11 source files
+  - **Phase 2:** Layout Shell — `Sidebar.tsx` (256px w-64, brand + "AI Voice Studio" + "Pro Audio Engine", New Project button, nav items Studio/Cloning/Library with active state, Status/Help footer with theme toggle). `TopAppBar.tsx` (sticky h-16 with backdrop-blur, search bar, notification/settings/avatar). `AppFooter.tsx` (fixed bottom left-64, engine version v2.4.0, pulse status dot, API Docs/Support). `App.tsx` with ThemeProvider + layout. `ScreenHeader.tsx` simplified (title + model pill only)
+  - **Phase 3:** UI Primitives — `GlassPanel.tsx` (glassmorphism with backdrop-blur, optional onClick). `Button.tsx` (4 variants: primary, primary-container, secondary, ghost — all theme-aware). `SegmentedControl.tsx` (pill-shaped rounded-full tab switcher). `Knob.tsx` (DAW-style conic-gradient rotary control). `Pill.tsx` (rounded-full badge). Removed `HelpFab.tsx` from all screens
+  - **Phase 4:** Voice Cloning Screen — 12-col grid: Create New Voice (7 cols) with Upload/Record two-card `VoiceSampleInput`, naming input + Save button. Technical Specs aside (5 cols) with audio visualization placeholder + Pro Workshop Tips panel. Full-width Test Voice Output with textarea + generate + custom `AudioPlayer` (seek bar with glow dot, transport controls, volume slider, Export button)
+  - **Phase 5:** Studio Recorder Screen — Main canvas: Studio Toolbar (project name/sample rate/timer), waveform viewport with grid overlay + zoom. Transport controls glass panel (Stop/Record/Pause with labels). Live Transcription preview. Right sidebar (w-80): pipeline checkbox stages (Clean/Transcribe/Translate with language dropdown/Re-voice with voice dropdown), Sensitivity section with Gain+Comp Knobs, Run Pipeline button
+  - **Phase 6:** Library Screen — `SegmentedControl` for Voices/Clips tabs. Voices grid: glass cards with waveform preview, play button, hover actions (play/delete), dashed "Clone New Voice" add card. Clips table in `GlassPanel` with Name/Duration/Created/Actions columns (play/download/delete). Empty states with "Go to Studio" buttons. Created `VoiceCard.tsx` and `ClipRow.tsx`
+  - **Phase 7:** Tests & Verification — Updated `App.test.tsx` for new shell. Verified: `npx tsc --noEmit` clean, `npm run build` succeeds, 11 frontend tests pass, backend 25 tests pass, server boots and responds to health
+
+### Next Steps
+- Visual verification of Stitch Studio UI in browser (manual)
+- Integration testing with NVIDIA_API_KEY for real NIM API calls
+- Remove old `figma_design/` directory if it exists
+
+### Learnings / Cautions
+- TailwindCSS v4 uses CSS `@theme` block — no separate `tailwind.config.ts` needed
+- Material Symbols replaced lucide-react across 11 files, 14 icon instances
+- Theme transition on `<html>`: `transition: color 300ms ease-out, background-color 300ms ease-out`
+- Backward-compatible CSS variable aliases (`--text`, `--accent`, `--border`) prevent breaking existing components during migration
+- Glass panel pattern: `bg-white/[var(--glass-opacity)] backdrop-blur-xl border border-white/10`
+
+---
+
+## Session 6 — 2026-07-18 (Comprehensive Logging Implementation)
+
+**Time:** ~09:50–10:02
+
+### Done
+- **Phase 1: Backend Logging Infrastructure (7 tasks)**
+  - Added `LOG_LEVEL`, `LOG_FORMAT`, `LOG_FILE` settings to `config.py`
+  - Configured root logger via `dictConfig` in `main.py` with text/JSON formatters, console + optional rotating file handler, suppressed uvicorn/httpx to WARNING, startup/shutdown messages
+  - Added global error middleware in `main.py` catching unhandled exceptions with full stack traces
+  - Added `logging.getLogger(__name__)` to all 6 routers (tts, asr, cleanup, studio, library, jobs) with INFO on request entry, WARNING on 404s, DEBUG on job poll
+  - Added logging to `nvidia_client.py`: DEBUG `_call` with timing + retry warnings + error logs, INFO on all 4 method entry/exit with sizes
+  - Added logging to `job_manager.py`: INFO create/start/done/fail, DEBUG update status transitions, INFO cleanup loop, ERROR with full traceback
+  - Added logging to `storage.py` (INFO saves, WARNING deletes) and `audio_service.py` (DEBUG validation, WARNING duration parse)
+  - Updated `.env.example` with LOG_LEVEL/LOG_FORMAT/LOG_FILE documentation
+- **Phase 2: Frontend Logging Infrastructure (5 tasks)**
+  - Created `frontend/src/lib/logger.ts`: zero-dependency `createLogger(context)` with level filtering, timestamp prefix, dev-mode debug/prod-mode warn
+  - Wrapped all 12 api.ts functions with `apiCall<T>()` with request/response timing and error logging
+  - Added `createLogger` to all 5 hooks (useJobPolling, useRecorder, useAudioPlayer, useVoices, useClips) — replaced silent catches with `log.error()`
+  - Added `createLogger` to 3 screen components (VoiceCloningScreen, StudioRecorderScreen, LibraryScreen) and AppContext for user action logging
+  - Created `ErrorBoundary.tsx` (class component, logs unhandled React render errors) and wrapped App in `main.tsx`
+- **Verification:** 25 backend tests pass, 11 frontend tests pass, TypeScript clean, lint passes, Vite build succeeds (236KB JS + 34KB CSS)
+
+### Next Steps
+- Commit all logging work
+- Run `bash init.sh` for full end-to-end check
+
+### Learnings / Cautions
+- FastAPI `on_event("shutdown")` is deprecated — should migrate to lifespan handlers in future cleanup
+- `npx tsc -b` (build mode) is stricter than `npx tsc --noEmit` — caught unused `React` import in ErrorBoundary that `--noEmit` didn't
+- With React 18+ JSX transform, `import React` is unnecessary for JSX — just import `Component`, `ReactNode`, `ErrorInfo`
+- Backend logging via Python's `logging` module works seamlessly across routers/services without DI
+- Frontend logger with `import.meta.env.DEV` auto-switches between debug (dev) and warn (prod) levels — Vite dead-code-eliminates debug calls in production build

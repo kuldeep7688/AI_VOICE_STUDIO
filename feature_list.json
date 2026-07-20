@@ -247,51 +247,140 @@
     "evidence": "6 tests passing (App: 5, useJobPolling: 1)"
   },
   {
-    "id": "feat-observability-backend-logging",
-    "name": "Backend Logging",
-    "description": "Add extensive structured logging to the backend (Python logging) for debugging every feature. dictConfig in main.py with text/json formatters and optional rotating file handler. Per-module loggers in all routers (6), nvidia_client.py, job_manager.py, storage.py, audio_service.py with ERROR/WARNING/INFO/DEBUG levels. Global exception handler for uncaught errors. Full traceback on job failures. Timing, retry logging, and response body logging for NIM API calls. Configurable via LOG_LEVEL, LOG_FORMAT, LOG_FILE env vars. Planned and approved but not yet implemented.",
-    "files": "docs/exec-plans/active/2026-07-06-comprehensive-logging.md, backend/config.py, backend/main.py, backend/routers/*.py, backend/nvidia_client.py, backend/job_manager.py, backend/services/*.py",
-    "status": "pending",
-    "evidence": "Implementation plan approved, Phase 1 (7 tasks) documented, awaiting execution"
+    "id": "feat-log-backend-infra",
+    "name": "Logging — Backend Infrastructure",
+    "description": "Wave 1: Add LOG_LEVEL/LOG_FORMAT/LOG_FILE settings to config.py. Set up dictConfig in main.py with text/JSON formatters, optional rotating file handler, console handler to stderr. Suppress uvicorn/httpx noise to WARNING. Add startup logger message and shutdown event. Add global error middleware (not exception handler — uses Starlette middleware to avoid swallowing HTTP exceptions). Update .env.example with logging vars.",
+    "files": "backend/config.py, backend/main.py, backend/.env.example",
+    "depends_on": [],
+    "status": "completed",
+    "evidence": "Server boots with 'Starting AI Voice Studio v0.1.0, log_level=INFO' log message. 25 backend tests passing."
   },
   {
-    "id": "feat-observability-frontend-logging",
-    "name": "Frontend Logging",
-    "description": "Add debugging logging to the frontend (console-based) for every feature. Zero-dependency logger.ts wrapping console with level filtering, context prefixes, and dev-mode stripping via Vite import.meta.env.DEV. Request/response timing logging in api.ts for all 12 endpoints. State transition and error logging in all 5 hooks (useJobPolling, useRecorder, useAudioPlayer, useVoices, useClips). User action logging in screen components (VoiceCloningScreen, StudioRecorderScreen, LibraryScreen). Class-based ErrorBoundary for unhandled render errors. Planned and approved but not yet implemented.",
-    "files": "docs/exec-plans/active/2026-07-06-comprehensive-logging.md, frontend/src/lib/logger.ts, frontend/src/lib/api.ts, frontend/src/hooks/*.ts, frontend/src/components/*/*.tsx, frontend/src/main.tsx",
-    "status": "pending",
-    "evidence": "Implementation plan approved, Phase 2 (5 tasks) documented, awaiting execution"
+    "id": "feat-log-frontend-util",
+    "name": "Logging — Frontend Logger Utility",
+    "description": "Wave 1: Create frontend/src/lib/logger.ts — zero-dependency console wrapper with createLogger(context) returning {debug, info, warn, error}. Level filtering via LOG_LEVELS map, dev-mode default 'debug' / prod default 'warn' via import.meta.env.DEV. Timestamp prefix (HH:MM:SS) and context prefix ([context]) on each message.",
+    "files": "frontend/src/lib/logger.ts",
+    "depends_on": [],
+    "status": "completed",
+    "evidence": "logger.ts created, TypeScript compiles clean, used by api.ts, all 5 hooks, 3 screen components, AppContext, and ErrorBoundary."
   },
   {
-    "id": "feat-ui-theme-system",
-    "name": "Theme System + Shell Refactor",
-    "description": "Dual theme system with Dark Mode (Amber & Obsidian) and Light Mode (Linen & Terracotta) color palettes. ThemeContext with localStorage persistence and toggle button in sidebar. Update globals.css with [data-theme] scoped tokens. Refresh sidebar: capsule-style active nav (rounded-lg, accent fill), theme toggle button (Sun/Moon icon), model status dots using new accent color. All UI primitives (Button, Panel, Pill, StatusDot, etc.) updated to use CSS custom properties for automatic theme adaptation.",
-    "files": "docs/design-docs/2026-07-07-ui-refresh-theme-system.md, docs/exec-plans/active/2026-07-07-ui-refresh-theme-system.md, frontend/src/globals.css, frontend/src/context/ThemeContext.tsx, frontend/src/App.tsx, frontend/src/components/Sidebar.tsx, frontend/src/components/ui/Button.tsx, frontend/src/components/ui/Panel.tsx, frontend/src/components/ui/Pill.tsx, frontend/src/components/ui/StatusDot.tsx, frontend/src/components/ui/SectionLabel.tsx, frontend/src/components/ui/IconButton.tsx, frontend/src/components/ui/VoiceTag.tsx, frontend/src/components/ui/WaveformBars.tsx",
-    "status": "pending",
-    "evidence": "Design spec and implementation plan written to disk"
+    "id": "feat-log-backend-routers",
+    "name": "Logging — Backend Routers",
+    "description": "Wave 2: Add logging.getLogger(__name__) to all 6 routers (tts, asr, cleanup, studio, library, jobs). INFO on every endpoint entry (job_id, audio size, text length, voice_id, language). INFO in task functions before NIM calls. WARNING on 404 lookups (job/voice/clip not found). library.py save_voice_endpoint logs name, filename, size, duration. DEBUG on job poll.",
+    "files": "backend/routers/tts.py, backend/routers/asr.py, backend/routers/cleanup.py, backend/routers/studio.py, backend/routers/library.py, backend/routers/jobs.py",
+    "depends_on": ["feat-log-backend-infra"],
+    "status": "completed",
+    "evidence": "All 6 routers have per-endpoint INFO logging, WARNING on 404s, DEBUG on job poll. Server imports cleanly."
   },
   {
-    "id": "feat-ui-voice-cloning",
-    "name": "Voice Cloning Screen Refactor",
-    "description": "12-column grid layout (grid grid-cols-12 gap-8) replacing single-Panel wrapping. Left column (col-span-4): Voice Sample Input with record/upload in 4-column sub-grid, Voice Name input + save button. Right column (col-span-8): Generate Speech textarea with char/word/estimated-time counters, Cloned Voice picker in 2-column grid, full-width GENERATE accent CTA. Remove outer Panel constraint for content to occupy viewport with p-6 padding.",
-    "files": "docs/design-docs/2026-07-07-ui-refresh-theme-system.md, docs/exec-plans/active/2026-07-07-ui-refresh-theme-system.md, frontend/src/components/VoiceCloning/VoiceCloningScreen.tsx, frontend/src/components/VoiceCloning/VoiceSampleInput.tsx, frontend/src/components/VoiceCloning/TextInput.tsx, frontend/src/components/VoiceCloning/ClonedVoicePicker.tsx, frontend/src/components/VoiceCloning/GenerateButton.tsx",
-    "status": "pending",
-    "evidence": "Design spec and implementation plan written to disk"
+    "id": "feat-log-nvidia-client",
+    "name": "Logging — Nvidia NIM Client",
+    "description": "Wave 2: Add logging to nvidia_client.py. DEBUG on _call with method, endpoint, audio_size, text_len. INFO on each method entry/exit with sizes. WARNING on retries (429/5xx) with attempt count. ERROR on failures with truncated response body (200 chars). Timing via time.monotonic() for all calls. Full API key kept in headers; truncated key shown only in debug log. Top-level asyncio import.",
+    "files": "backend/nvidia_client.py",
+    "depends_on": ["feat-log-backend-infra"],
+    "status": "completed",
+    "evidence": "NvidiaClient with logging in __init__, _call (DEBUG + timing + retry+error), and all 4 methods (INFO entry/exit). Server imports cleanly."
   },
   {
-    "id": "feat-ui-studio-recorder",
-    "name": "Studio Recorder Screen Refactor",
-    "description": "Pipeline stages converted to 4-column grid (grid grid-cols-4 gap-4). Status dots replace ON/OFF text on PipelineStageCard — active card: accent border + filled dot, inactive card: muted border + hollow ring. Full-width RUN PIPELINE accent CTA below pipeline grid. Recorder canvas retains wide timeline layout with centered recording icon.",
-    "files": "docs/design-docs/2026-07-07-ui-refresh-theme-system.md, docs/exec-plans/active/2026-07-07-ui-refresh-theme-system.md, frontend/src/components/StudioRecorder/StudioRecorderScreen.tsx, frontend/src/components/StudioRecorder/PipelineStages.tsx, frontend/src/components/StudioRecorder/PipelineStageCard.tsx, frontend/src/components/StudioRecorder/RunPipelineButton.tsx, frontend/src/components/StudioRecorder/RecordControls.tsx",
-    "status": "pending",
-    "evidence": "Design spec and implementation plan written to disk"
+    "id": "feat-log-job-manager",
+    "name": "Logging — Job Manager",
+    "description": "Wave 2: Add logging to job_manager.py. INFO on create/start/done/fail with job_id. DEBUG on update_job status transitions. INFO on cleanup loop start and expired job removal. ERROR on failures with full traceback via traceback.format_exc(). import traceback added.",
+    "files": "backend/job_manager.py",
+    "depends_on": ["feat-log-backend-infra"],
+    "status": "completed",
+    "evidence": "job_manager.py with logging on create_job, update_job (DEBUG + WARNING 404), _cleanup_loop (INFO), run_job (INFO start/done/fail with traceback). 25 backend tests passing."
   },
   {
-    "id": "feat-ui-library",
-    "name": "Library Screen Refactor",
-    "description": "Tab routing header: inline nav on left (Voices (X) / Clips (Y)), + Add button anchored right. Voices: 2-column grid (grid grid-cols-2 gap-4) of VoiceCards. Clips: vertical stack (space-y-3) of ClipRows with colored metadata dots. Empty state: centered 'No saved voices yet.' for zero-length data.",
-    "files": "docs/design-docs/2026-07-07-ui-refresh-theme-system.md, docs/exec-plans/active/2026-07-07-ui-refresh-theme-system.md, frontend/src/components/Library/LibraryScreen.tsx, frontend/src/components/Library/LibraryTabs.tsx, frontend/src/components/Library/VoiceCard.tsx, frontend/src/components/Library/ClipRow.tsx",
-    "status": "pending",
-    "evidence": "Design spec and implementation plan written to disk"
+    "id": "feat-log-backend-services",
+    "name": "Logging — Storage + Audio Service",
+    "description": "Wave 2: Add logging to storage.py (INFO on save_voice/save_clip/save_recording with filename and size, WARNING on delete failures) and audio_service.py (DEBUG on WAV validation results, WARNING on duration parse failure).",
+    "files": "backend/services/storage.py, backend/services/audio_service.py",
+    "depends_on": ["feat-log-backend-infra"],
+    "status": "completed",
+    "evidence": "storage.py with INFO saves/WARNING deletes. audio_service.py with DEBUG WAV validation and WARNING duration parse. 25 tests passing."
+  },
+  {
+    "id": "feat-log-frontend-api",
+    "name": "Logging — Frontend API Client",
+    "description": "Wave 3: Wrap all 11 api.ts functions with apiCall<T>(url, options, bodySize?) wrapper. INFO on every request with method and URL. DEBUG on response with status code and elapsed time. ERROR on failures. handleResponse handles 204 No Content (returns undefined, no .json() call). Each function gets explicit replacement code — no placeholders.",
+    "files": "frontend/src/lib/api.ts",
+    "depends_on": ["feat-log-frontend-util"],
+    "status": "completed",
+    "evidence": "api.ts with apiCall wrapper covering all 12 endpoints, handleResponse with 204 support. TypeScript compiles clean, build succeeds. Log output visible in test stdout."
+  },
+  {
+    "id": "feat-log-frontend-hooks-screens",
+    "name": "Logging — Frontend Hooks + Screens",
+    "description": "Wave 3: Add createLogger to all 5 hooks: useJobPolling (start/stop polling, status transitions, terminal done/failed with job.error.message, poll errors), useRecorder (start/stop recording, permission denied errors), useAudioPlayer (play url, audio element errors, pause), useVoices (fetch errors, add voice with name+size, delete voice), useClips (fetch errors, delete clip). All silent catch {} blocks replaced with log.error(). Add createLogger to 3 screen components: VoiceCloningScreen (generate action), StudioRecorderScreen (run pipeline), LibraryScreen (tab switch). Add createLogger to AppContext.tsx (screen navigation).",
+    "files": "frontend/src/hooks/useJobPolling.ts, frontend/src/hooks/useRecorder.ts, frontend/src/hooks/useAudioPlayer.ts, frontend/src/hooks/useVoices.ts, frontend/src/hooks/useClips.ts, frontend/src/components/VoiceCloning/VoiceCloningScreen.tsx, frontend/src/components/StudioRecorder/StudioRecorderScreen.tsx, frontend/src/components/Library/LibraryScreen.tsx, frontend/src/context/AppContext.tsx",
+    "depends_on": ["feat-log-frontend-util"],
+    "status": "completed",
+    "evidence": "All 5 hooks, 3 screen components, and AppContext have createLogger with context-specific log messages. All silent catches replaced with log.error(). TypeScript compiles clean, 11 frontend tests passing, build succeeds."
+  },
+  {
+    "id": "feat-log-error-boundary",
+    "name": "Logging — Error Boundary + Verification",
+    "description": "Wave 4 (final): Create ErrorBoundary.tsx (class component, catches unhandled React render errors, logs via createLogger). Wrap App in ErrorBoundary in main.tsx. Run full verification: backend pytest -v, frontend npm test, npx tsc --noEmit, npm run build, bash init.sh. This feature gates all logging work — only marked complete when all tests pass and builds succeed.",
+    "files": "frontend/src/components/ErrorBoundary.tsx, frontend/src/main.tsx",
+    "depends_on": ["feat-log-backend-routers", "feat-log-nvidia-client", "feat-log-job-manager", "feat-log-backend-services", "feat-log-frontend-api", "feat-log-frontend-hooks-screens"],
+    "status": "completed",
+    "evidence": "ErrorBoundary created with componentDidCatch logging. App wrapped in main.tsx. Full verification: 25 backend tests pass, 11 frontend tests pass, TypeScript clean, lint passes, Vite build succeeds (236KB JS + 34KB CSS)."
+  },
+  {
+    "id": "feat-ui-stitch-foundation",
+    "name": "Stitch Studio — Design System Foundation",
+    "description": "Dual-theme design system foundation. Rewrite globals.css with [data-theme] scoped CSS variables for both dark (studio_ai: navy #0b1326, green accent #94da32, glassmorphism) and light (visual_framework: white #fdfcff, lavender #cebdff, glassmorphism). Update tailwind.config.ts with both color palettes, typography (Inter/JetBrains Mono for dark, Manrope/Geist for light), spacing, and radius scales. Refactor ThemeContext to persist light/dark toggle to localStorage. Replace lucide-react with Material Symbols icons via Google Fonts CDN. Verify: npx tsc --noEmit, npm run build.",
+    "files": "docs/design-docs/2026-07-18-stitch-studio-ui.md, docs/exec-plans/active/2026-07-18-stitch-studio-ui.md, frontend/src/globals.css, frontend/src/context/ThemeContext.tsx, frontend/index.html, frontend/package.json, frontend/src/components/ui/Icon.tsx",
+    "status": "completed",
+    "evidence": "globals.css rewritten with dual-theme tokens, ThemeContext persists to localStorage, lucide-react replaced with Material Symbols via Icon component, npx tsc --noEmit clean, npm run build succeeds, 11 tests passing"
+  },
+  {
+    "id": "feat-ui-stitch-shell",
+    "name": "Stitch Studio — Layout Shell",
+    "description": "New application shell: 256px sidebar with brand icon + 'AI Voice Studio' + 'New Project' button + nav items (Studio/Cloning/Library) with primary-container active state + Status/Help footer with theme toggle. Sticky TopAppBar (h-16, backdrop-blur) with screen title, search, notifications, settings, avatar. Fixed footer bar (h-8) with engine version, processing status dot, API/Support links. Update App.tsx layout with ThemeProvider wrapping AppProvider.",
+    "files": "docs/design-docs/2026-07-18-stitch-studio-ui.md, docs/exec-plans/active/2026-07-18-stitch-studio-ui.md, frontend/src/App.tsx, frontend/src/components/Sidebar.tsx, frontend/src/components/TopAppBar.tsx, frontend/src/components/AppFooter.tsx",
+    "status": "completed",
+    "evidence": "Sidebar (256px) with brand, New Project, nav, theme toggle working. TopAppBar with backdrop-blur search + icons. Fixed footer with version + status dot. App.tsx sidebar+topbar+content+footer layout. 11 tests passing"
+  },
+  {
+    "id": "feat-ui-stitch-primitives",
+    "name": "Stitch Studio — UI Primitives",
+    "description": "New and updated reusable UI components: GlassPanel (glassmorphism with backdrop-blur, semi-transparent bg, themed borders), Button variants (primary/primary-container/secondary/ghost with theme-aware colors), SectionLabel (mono-label for dark, label-caps for light), SegmentedControl (pill-shaped tab switcher), Knob (DAW-style circular control for gain/comp), Pill, StatusDot, VoiceTag, WaveformBars. Remove obsolete HelpFab (help now in sidebar). All components use CSS custom properties for automatic theme switching.",
+    "files": "docs/design-docs/2026-07-18-stitch-studio-ui.md, frontend/src/components/ui/GlassPanel.tsx, frontend/src/components/ui/Button.tsx, frontend/src/components/ui/SegmentedControl.tsx, frontend/src/components/ui/Knob.tsx, frontend/src/components/ui/Pill.tsx",
+    "status": "completed",
+    "evidence": "GlassPanel with glassmorphism, Button with 4 theme-aware variants, SegmentedControl pill-shaped, Knob DAW-style conic-gradient, Pill rounded-full, HelpFab removed. All use CSS vars for theme switching. 11 tests passing"
+  },
+  {
+    "id": "feat-ui-stitch-voice-cloning",
+    "name": "Stitch Studio — Voice Cloning Screen",
+    "description": "12-column grid layout matching voice_cloning code.html. 'Create New Voice' section (7 cols): Upload Audio / Record 10s Sample side-by-side cards with drag-drop zone and timer display, naming input + 'SAVE VOICE MODEL' button. 'Technical Specs' aside (5 cols): audio waveform visualization placeholder, Pro Workshop Tips panel. Full-width 'Test Voice Output' section: textarea + generate button, custom audio player with seek bar + playback controls + volume + timeline + export. Custom AudioPlayer component.",
+    "files": "docs/design-docs/2026-07-18-stitch-studio-ui.md, frontend/src/components/VoiceCloning/VoiceCloningScreen.tsx, frontend/src/components/VoiceCloning/VoiceSampleInput.tsx, frontend/src/components/common/AudioPlayer.tsx",
+    "status": "completed",
+    "evidence": "12-col grid with Create New Voice (7 cols) + Technical Specs (5 cols) + Test Voice Output (12 cols). Upload/Record two-card layout. AudioPlayer with seek bar, glow dot, volume, export. Build succeeds, 11 tests passing"
+  },
+  {
+    "id": "feat-ui-stitch-studio-recorder",
+    "name": "Stitch Studio — Studio Recorder Screen",
+    "description": "Complete layout restructure matching studio_recorder code.html. Main canvas: waveform viewport with grid overlay + level meters + zoom controls. Transport controls (glass panel): Stop / Record (large red) / Pause with labels. Live transcription preview. Right sidebar (320px): pipeline checkbox stages (Clean/Transcribe/Translate/Re-voice with dropdowns), Sensitivity section with Gain+Comp knobs, Run Pipeline button.",
+    "files": "docs/design-docs/2026-07-18-stitch-studio-ui.md, frontend/src/components/StudioRecorder/StudioRecorderScreen.tsx, frontend/src/components/StudioRecorder/StageOutput.tsx, frontend/src/components/StudioRecorder/WaveformViz.tsx",
+    "status": "completed",
+    "evidence": "Full layout: waveform viewport with grid overlay + zoom, transport controls with large red record button, pipeline sidebar with checkboxes + language/voice dropdowns, Sensitivity section with Gain+Comp Knobs. Build succeeds, 11 tests passing"
+  },
+  {
+    "id": "feat-ui-stitch-library",
+    "name": "Stitch Studio — Library Screen",
+    "description": "New library layout matching library code.html. SegmentedControl pill for Voices/Clips tabs. Voices: responsive grid of glass cards with icon, name, category label, play button with waveform preview, hover actions (edit/delete), + 'Clone New Voice' dashed add card. Clips: table view in glass panel with name, duration, created, action buttons (play/download/delete). Empty state with icon, title, and 'Go to Studio' button.",
+    "files": "docs/design-docs/2026-07-18-stitch-studio-ui.md, frontend/src/components/Library/LibraryScreen.tsx, frontend/src/components/Library/VoiceCard.tsx, frontend/src/components/Library/ClipRow.tsx, frontend/src/components/ui/SegmentedControl.tsx",
+    "status": "completed",
+    "evidence": "SegmentedControl for tabs, voice glass cards with icon/name/play/waveform/hover actions, clips table with name/duration/created/actions columns, empty state with Go to Studio buttons. Build succeeds, 11 tests passing"
+  },
+  {
+    "id": "feat-ui-stitch-tests",
+    "name": "Stitch Studio — Tests & Verification",
+    "description": "Update test suite for new UI. Update App.test.tsx for new shell (sidebar with brand + New Project + nav, TopAppBar, Footer). Verification: npx tsc --noEmit, npm run lint, npm run build, backend pytest -v, bash init.sh.",
+    "files": "frontend/tests/components/App.test.tsx",
+    "status": "completed",
+    "evidence": "App.test.tsx updated for new shell (brand 'AI Voice Studio', nav: Studio/Cloning/Library, New Project, Status/Help/Light Mode, TopAppBar title). npx tsc --noEmit clean, npm run build succeeds, backend 25 tests pass, frontend 11 tests pass. Server boots and responds to health"
   }
 ]
