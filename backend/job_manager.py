@@ -1,8 +1,12 @@
 import asyncio
+import traceback
+import logging
 import uuid
 from typing import Any, Callable, Coroutine, Optional
 from datetime import datetime, timezone
 from models import JobStatus, JobResponse, JobResult, JobError
+
+logger = logging.getLogger(__name__)
 
 JobTask = Callable[..., Coroutine[Any, Any, JobResult]]
 
@@ -42,6 +46,7 @@ class JobManager:
     def create_job(self, total_steps: int = 1) -> str:
         job_id = f"j_{uuid.uuid4().hex[:12]}"
         self._jobs[job_id] = Job(job_id, total_steps)
+        logger.info("Job created: job=%s total_steps=%d", job_id, total_steps)
         return job_id
 
     def get_job(self, job_id: str) -> Optional[Job]:
@@ -59,7 +64,9 @@ class JobManager:
     ):
         job = self._jobs.get(job_id)
         if not job:
+            logger.warning("Job update skipped: job=%s not found", job_id)
             return
+        old_status = job.status.value
         if status:
             job.status = status
         if progress is not None:
@@ -72,12 +79,20 @@ class JobManager:
             job.result = result
         if error:
             job.error = error
+        params = [job_id, old_status]
+        if status:
+            params.append(job.status.value)
+        else:
+            params.append("")
+        params.extend([job.progress, job.step, job.steps_completed, job.total_steps])
+        logger.debug("Job updated: job=%s status=%s->%s progress=%d step=%s steps=%d/%d", *params)
 
     def start_cleanup(self):
         if self._cleanup_task is None:
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
 
     async def _cleanup_loop(self):
+        logger.info("Cleanup loop started: expiry=%ds interval=%ds", self._expiry_seconds, self._expiry_seconds // 4)
         while True:
             await asyncio.sleep(self._expiry_seconds // 4)
             now = datetime.now(timezone.utc)
@@ -88,8 +103,10 @@ class JobManager:
                 and (now - datetime.fromisoformat(j.created_at)).total_seconds()
                 > self._expiry_seconds
             ]
-            for jid in expired:
-                del self._jobs[jid]
+            if expired:
+                for jid in expired:
+                    del self._jobs[jid]
+                logger.info("Cleanup: removed %d expired jobs", len(expired))
 
     async def run_job(
         self,
@@ -98,6 +115,7 @@ class JobManager:
         *args,
         **kwargs,
     ):
+        logger.info("Job start: job=%s", job_id)
         self.update_job(job_id, status=JobStatus.processing)
         try:
             result = await task(job_id, *args, **kwargs)
@@ -108,11 +126,15 @@ class JobManager:
                 steps_completed=kwargs.get("total_steps", 1),
                 result=result,
             )
+            logger.info("Job done: job=%s", job_id)
         except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Job failed: job=%s error=%s\n%s", job_id, str(e), tb)
+            job = self._jobs.get(job_id)
             self.update_job(
                 job_id,
                 status=JobStatus.failed,
-                error=JobError(stage=self._jobs[job_id].step, message=str(e)),
+                error=JobError(stage=job.step if job else None, message=str(e)),
             )
 
 

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     max_voice_sample_duration_secs: int = 15
     job_expiry_seconds: int = 3600
     job_cleanup_interval_seconds: int = 900
+    log_level: str = "INFO"
+    log_format: str = "text"
+    log_file: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import Optional
 import asyncio
@@ -10,6 +11,8 @@ from job_manager import job_manager
 from nvidia_client import nvidia_client
 from services.storage import save_clip, get_voice_path
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -21,16 +24,17 @@ async def _pipeline_task(
     voice_id: Optional[str] = None,
     total_steps: int = 1,
 ) -> JobResult:
+    logger.info("Pipeline job=%s: steps=%s audio_size=%d", job_id, [s.value for s in steps], len(audio_bytes))
     result = JobResult()
     current_audio = audio_bytes
 
     for i, step in enumerate(steps):
+        logger.info("Pipeline job=%s: step %d/%d=%s", job_id, i + 1, total_steps, step.value)
         job_manager.update_job(job_id, step=step.value, steps_completed=i, progress=int(i / total_steps * 100))
 
         if step == PipelineStep.clean:
-            current_audio = await nvidia_client.bnr_denoise(current_audio)
-            filename = save_clip(current_audio)
-            result.audio_url = f"/audio/clips/{filename}"
+            logger.warning("Pipeline job=%s: BNR clean step not yet available", job_id)
+            raise ValueError("BNR background noise removal is not yet available. Coming soon.")
 
         elif step == PipelineStep.transcribe:
             text = await nvidia_client.asr_transcribe(current_audio)
@@ -55,6 +59,7 @@ async def _pipeline_task(
             text_to_speak = result.translated_text or result.text
             if not text_to_speak:
                 raise ValueError("No text available for revoice (need transcribe or translate step first)")
+            logger.info("Pipeline job=%s: revoice voice=%s text_len=%d", job_id, voice_id, len(text_to_speak))
             revoiced_audio = await nvidia_client.tts_clone(voice_audio, text_to_speak)
             filename = save_clip(revoiced_audio)
             result.audio_url = f"/audio/clips/{filename}"
@@ -74,6 +79,8 @@ async def run_pipeline(
     parsed_steps = [PipelineStep(s.strip()) for s in steps.split(",")]
     total = len(parsed_steps)
     job_id = job_manager.create_job(total_steps=total)
+    logger.info("Pipeline request: steps=%s lang=%s voice=%s size=%d -> job=%s",
+                steps, target_language, voice_id, len(audio_bytes), job_id)
     asyncio.ensure_future(
         job_manager.run_job(
             job_id,

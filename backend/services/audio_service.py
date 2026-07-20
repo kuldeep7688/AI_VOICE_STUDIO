@@ -1,7 +1,10 @@
 import io
 import struct
 import wave
+import logging
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class AudioValidationError(Exception):
@@ -24,6 +27,7 @@ def validate_wav(audio_bytes: bytes, max_duration_secs: int = -1) -> tuple[int, 
         raise AudioValidationError(
             f"Audio too long: {duration_secs:.1f}s (max {max_duration_secs}s)"
         )
+    logger.debug("WAV validated: rate=%d channels=%d bits=%d duration=%.2fs", sample_rate, channels, bits_per_sample, duration_secs)
     return sample_rate, channels, bits_per_sample
 
 
@@ -31,6 +35,7 @@ def get_duration_secs(audio_bytes: bytes) -> float:
     try:
         validate_wav(audio_bytes)
     except AudioValidationError:
+        logger.warning("Duration calc failed: invalid WAV, returning 0.0")
         return 0.0
     channels = struct.unpack("<H", audio_bytes[22:24])[0]
     sample_rate = struct.unpack("<I", audio_bytes[24:28])[0]

@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { getJob } from '../lib/api';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('job-polling');
 
 interface JobResult {
   audio_url?: string;
@@ -32,6 +35,8 @@ export function useJobPolling(jobId: string | null) {
   useEffect(() => {
     if (!jobId) return;
 
+    log.info(`Start polling job=${jobId}`);
+
     const poll = async () => {
       try {
         const job = await getJob(jobId);
@@ -44,10 +49,17 @@ export function useJobPolling(jobId: string | null) {
           result: job.result,
           error: job.error?.message || null,
         });
-        if (job.status === 'done' || job.status === 'failed') {
+        log.debug(`Job ${jobId}: status=${job.status} progress=${job.progress}`);
+        if (job.status === 'done') {
+          log.info(`Job ${jobId}: done`);
           if (intervalRef.current) clearInterval(intervalRef.current);
         }
-      } catch {
+        if (job.status === 'failed') {
+          log.error(`Job ${jobId}: failed`, job.error?.message);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+        }
+      } catch (err) {
+        log.error(`Job ${jobId}: poll error`, err);
         if (intervalRef.current) clearInterval(intervalRef.current);
         setState(s => ({ ...s, status: 'failed', error: 'Polling failed' }));
       }
@@ -57,7 +69,10 @@ export function useJobPolling(jobId: string | null) {
     intervalRef.current = setInterval(poll, 2000);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        log.info(`Stop polling job=${jobId}`);
+        clearInterval(intervalRef.current);
+      }
     };
   }, [jobId]);
 
