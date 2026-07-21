@@ -1,10 +1,8 @@
 import { useRef } from 'react';
 import { useRecorder } from '../../hooks/useRecorder';
-import { SectionLabel } from '../ui/SectionLabel';
+import { GlassPanel } from '../ui/GlassPanel';
 import { Button } from '../ui/Button';
-import { IconButton } from '../ui/IconButton';
-import { WaveformBars } from '../ui/WaveformBars';
-import { Mic, Upload } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   onAudioReady: (blob: Blob) => void;
@@ -14,8 +12,6 @@ interface Props {
   onSave: () => void;
   isSaving: boolean;
 }
-
-const DUMMY_BARS = Array.from({ length: 24 }, () => Math.random() * 0.6 + 0.1);
 
 export function VoiceSampleInput({
   onAudioReady, hasAudio, voiceName, onVoiceNameChange, onSave, isSaving,
@@ -34,57 +30,64 @@ export function VoiceSampleInput({
 
   return (
     <div className="space-y-4">
-      <SectionLabel>SAMPLE INPUT</SectionLabel>
-      <p className="text-xs text-[--text-subtle]">
-        Record or upload a 10–15 second voice sample
-      </p>
+      <div className="grid grid-cols-2 gap-4">
+        {/* Upload Card */}
+        <GlassPanel
+          className="p-6 flex flex-col items-center justify-center gap-3 min-h-[160px] cursor-pointer hover:border-primary/30 transition-colors"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Icon name="cloud_upload" size={32} className="text-on-surface-variant" />
+          <p className="text-[13px] font-medium text-on-surface">Upload Audio</p>
+          <p className="text-[11px] text-on-surface-variant font-mono text-center">
+            DRAG & DROP
+            <br />or click to browse
+          </p>
+          <input ref={fileInputRef} type="file" accept="audio/*" onChange={handleFile} className="hidden" />
+        </GlassPanel>
 
-      <div className="h-[140px] rounded-[8px] border border-dashed border-[--border] bg-[--bg] overflow-hidden">
-        {hasAudio ? (
-          <WaveformBars bars={DUMMY_BARS} color="var(--accent)" height={140} />
-        ) : (
-          <div className="flex items-center justify-center h-full text-[--text-subtle] font-mono text-[10px] uppercase tracking-wider">
-            {isRecording ? (
-              <WaveformBars bars={DUMMY_BARS.slice(0, 12)} color="var(--accent)" height={140} />
-            ) : (
-              'No sample loaded'
-            )}
+        {/* Record Card */}
+        <GlassPanel className="p-6 flex flex-col items-center justify-center gap-3 min-h-[160px]">
+          <div className="text-[28px] font-mono text-on-surface font-bold tabular-nums">
+            {isRecording
+              ? `${String(Math.floor(duration / 60)).padStart(2, '0')}:${String(duration % 60).padStart(2, '0')}:${String(0).padStart(2, '0')}`
+              : '00:00:00'}
           </div>
-        )}
+          <button
+            onClick={isRecording ? stop : start}
+            className={`btn-press w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
+              isRecording
+                ? 'border-error bg-error/10 text-error'
+                : 'border-tertiary text-tertiary hover:bg-tertiary/10'
+            }`}
+          >
+            <Icon name={isRecording ? 'stop' : 'mic'} size={22} />
+          </button>
+          <p className="text-[11px] text-on-surface-variant font-mono">
+            {isRecording ? 'Recording...' : 'Record Sample'}
+          </p>
+        </GlassPanel>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={isRecording ? stop : start} variant="primary" className="flex-1">
-          <Mic className="w-4 h-4" strokeWidth={1.8} />
-          {isRecording ? `Stop (${duration}s)` : 'Record'}
-        </Button>
-        <IconButton label="Upload audio file" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="w-4 h-4" strokeWidth={1.5} />
-        </IconButton>
-        <input ref={fileInputRef} type="file" accept="audio/*" onChange={handleFile} className="hidden" />
-      </div>
-
-      <SectionLabel>VOICE NAME</SectionLabel>
+      {/* Voice Name + Save */}
       <div className="flex gap-2">
         <input
           type="text"
           value={voiceName}
           onChange={e => onVoiceNameChange(e.target.value)}
-          placeholder="e.g. My Voice"
-          className="flex-1 px-3 py-2 bg-[--bg] border border-[--border] rounded-[6px] text-[13px] text-[--text] placeholder-[--text-subtle] outline-none focus:border-[--accent] transition-colors duration-200"
+          placeholder="Voice name..."
+          className="flex-1 px-3 py-2.5 bg-surface-container-lowest border border-outline/30 rounded-lg text-[13px] text-on-surface placeholder-on-surface-variant/50 outline-none focus:border-primary/40 transition-colors"
         />
-        <Button onClick={onSave} variant="secondary" disabled={!hasAudio || !voiceName.trim() || isSaving}>
-          Save Voice
+        <Button
+          onClick={onSave}
+          variant="primary-container"
+          disabled={!hasAudio || !voiceName.trim() || isSaving}
+        >
+          <Icon name="save" size={16} />
+          {isSaving ? 'Saving...' : 'Save Voice Model'}
         </Button>
       </div>
 
-      <SectionLabel>MODEL</SectionLabel>
-      <div className="flex items-center gap-2">
-        <span className="w-[6px] h-[6px] rounded-full bg-[--accent]" style={{ animation: 'pulse-dot 2s ease-in-out infinite' }} />
-        <span className="font-mono text-[11px] text-[--text-muted]">magpie-tts-zeroshot</span>
-      </div>
-
-      {error && <p className="text-[--danger] text-xs">{error}</p>}
+      {error && <p className="text-error text-xs">{error}</p>}
     </div>
   );
 }

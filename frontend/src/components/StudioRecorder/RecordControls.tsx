@@ -1,7 +1,7 @@
 import { useRecorder } from '../../hooks/useRecorder';
 import { SectionLabel } from '../ui/SectionLabel';
 import { Panel } from '../ui/Panel';
-import { Mic } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   onRecordingComplete: (blob: Blob) => void;
@@ -26,11 +26,10 @@ export function RecordControls({ onRecordingComplete }: Props) {
               : 'border-[--accent] hover:border-[--accent-hover]'
           } bg-[--bg] transition-all duration-200`}
         >
-          <Mic
-            className={`w-6 h-6 ${
-              isRecording ? 'text-[--danger]' : 'text-[--accent]'
-            }`}
-            strokeWidth={1.8}
+          <Icon
+            name="mic"
+            size={24}
+            className={isRecording ? 'text-[--danger]' : 'text-[--accent]'}
           />
         </button>
         <p className="text-[13px] text-[--text-muted]">

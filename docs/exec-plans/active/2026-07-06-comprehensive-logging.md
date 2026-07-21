@@ -53,7 +53,7 @@ Replace the imports at the top of `backend/main.py`:
 import logging
 import logging.config
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from config import settings, get_voices_dir, get_clips_dir, get_recordings_dir
@@ -250,7 +250,7 @@ async def list_voices():
 @router.post("/voices", response_model=VoiceResponse)
 async def save_voice_endpoint(...):
     ...
-    logger.info("Save voice: name=%s filename=%s duration=%.1fs", name, filename, duration)
+    logger.info("Save voice: name=%s filename=%s size=%d duration=%.1fs", name, filename, len(audio_bytes), duration)
     ...
 
 @router.delete("/voices/{voice_id}", status_code=204)
@@ -316,6 +316,7 @@ Add import at top:
 
 ```python
 import time
+import asyncio
 import logging
 logger = logging.getLogger(__name__)
 ```
@@ -326,9 +327,10 @@ Replace `__init__`:
     def __init__(self):
         self._client: Optional[httpx.AsyncClient] = None
         self._headers = {
-            "Authorization": f"Bearer {settings.nvidia_api_key[:8]}...",  # truncated for logs
+            "Authorization": f"Bearer {settings.nvidia_api_key}",
             "Content-Type": "application/json",
         }
+        logger.debug("NvidiaClient ready: key=%s... base=%s", settings.nvidia_api_key[:8], settings.api_base_url)
 ```
 
 Replace `_call`:
@@ -361,7 +363,6 @@ Replace `_call`:
                     logger.warning("NIM retry: endpoint=%s status=%d attempt=%d/%d elapsed=%.2fs",
                                    endpoint, resp.status_code, attempt + 1, 2, elapsed)
                     if attempt == 0:
-                        import asyncio
                         await asyncio.sleep(1)
                         continue
                 resp.raise_for_status()
@@ -635,16 +636,19 @@ Expected: All 25 tests pass
 
 **Purpose:** Catch unhandled exceptions with a global handler and document the new logging settings in `.env.example`.
 
-- [ ] **Step 1: Add global exception handler to main.py**
+- [ ] **Step 1: Add global error middleware to main.py**
 
 After the models endpoint, add:
 
 ```python
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    logger.error("Unhandled exception: %s %s\n%s", request.method, request.url.path, exc, exc_info=True)
-    from fastapi.responses import JSONResponse
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+@app.middleware("http")
+async def log_errors_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        logger.error("Unhandled exception: %s %s\n%s", request.method, request.url.path, exc, exc_info=True)
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 ```
 
 - [ ] **Step 2: Update .env.example**
@@ -764,6 +768,7 @@ async function handleResponse<T>(resp: Response): Promise<T> {
     log.error(`${resp.url} -> ${resp.status}: ${text.slice(0, 200)}`);
     throw new Error(`API ${resp.status}: ${text}`);
   }
+  if (resp.status === 204) return undefined as T;
   return resp.json();
 }
 ```
@@ -792,7 +797,7 @@ async function apiCall<T>(
 }
 ```
 
-Example usage in one function (repeat for all):
+Replace every function in `api.ts` to use `apiCall`. Full code for each:
 
 ```typescript
 export async function ttsClone(voiceId: string, text: string): Promise<string> {
@@ -803,18 +808,73 @@ export async function ttsClone(voiceId: string, text: string): Promise<string> {
   }, text.length);
   return resp.job_id;
 }
+
+export async function transcribe(audio: Blob): Promise<string> {
+  const form = new FormData();
+  form.append('audio', audio, 'recording.wav');
+  const resp = await apiCall<{ job_id: string }>('/api/asr', { method: 'POST', body: form }, audio.size);
+  return resp.job_id;
+}
+
+export async function translate(audio: Blob, targetLanguage: string): Promise<string> {
+  const form = new FormData();
+  form.append('audio', audio, 'recording.wav');
+  form.append('target_language', targetLanguage);
+  const resp = await apiCall<{ job_id: string }>('/api/asr/translate', { method: 'POST', body: form }, audio.size);
+  return resp.job_id;
+}
+
+export async function cleanAudio(audio: Blob): Promise<string> {
+  const form = new FormData();
+  form.append('audio', audio, 'recording.wav');
+  const resp = await apiCall<{ job_id: string }>('/api/clean', { method: 'POST', body: form }, audio.size);
+  return resp.job_id;
+}
+
+export async function runPipeline(
+  audio: Blob,
+  steps: string[],
+  targetLanguage?: string,
+  voiceId?: string
+): Promise<string> {
+  const form = new FormData();
+  form.append('audio', audio, 'recording.wav');
+  form.append('steps', steps.join(','));
+  if (targetLanguage) form.append('target_language', targetLanguage);
+  if (voiceId) form.append('voice_id', voiceId);
+  const resp = await apiCall<{ job_id: string }>('/api/studio/pipeline', { method: 'POST', body: form }, audio.size);
+  return resp.job_id;
+}
+
+export async function getJob(jobId: string): Promise<JobResponse> {
+  return apiCall<JobResponse>(`/api/jobs/${jobId}`, { method: 'GET' });
+}
+
+export async function saveVoice(name: string, audio: Blob): Promise<Voice> {
+  const form = new FormData();
+  form.append('name', name);
+  form.append('audio', audio, 'voice.wav');
+  return apiCall<Voice>('/api/voices', { method: 'POST', body: form }, audio.size);
+}
+
+export async function getVoices(): Promise<Voice[]> {
+  const data = await apiCall<{ voices: Voice[] }>('/api/voices', { method: 'GET' });
+  return data.voices;
+}
+
+export async function deleteVoice(voiceId: string): Promise<void> {
+  await apiCall<void>(`/api/voices/${voiceId}`, { method: 'DELETE' });
+}
+
+export async function getClips(): Promise<Clip[]> {
+  const data = await apiCall<{ clips: Clip[] }>('/api/clips', { method: 'GET' });
+  return data.clips;
+}
+
+export async function deleteClip(clipId: string): Promise<void> {
+  await apiCall<void>(`/api/clips/${clipId}`, { method: 'DELETE' });
+}
 ```
-
-Wrap every function in `api.ts` to use `apiCall`:
-
-- `ttsClone` — bodySize = text.length
-- `transcribe` — audio.size
-- `translate` — audio.size
-- `cleanAudio` — audio.size
-- `runPipeline` — audio.size
-- `getJob` — no body
-- `saveVoice` — audio.size
-- `getVoices`, `deleteVoice`, `getClips`, `deleteClip` — no body
 
 - [ ] **Step 2: Verify TypeScript compiles**
 
@@ -842,24 +902,29 @@ Expected: No errors
 import { createLogger } from '../lib/logger';
 const log = createLogger('job-polling');
 
-// At start of polling effect:
+// At start of polling effect (inside useEffect before setInterval):
 log.info(`Start polling job=${jobId}`);
 
-// On each poll response, log status transitions:
-log.debug(`Job ${jobId}: status=${status} progress=${progress}`);
+// In poll function, after setState(...):
+log.debug(`Job ${jobId}: status=${job.status} progress=${job.progress}`);
 
-// When job enters done/failed:
-if (status === 'done') log.info(`Job ${jobId}: done`);
-if (status === 'failed') log.error(`Job ${jobId}: failed`, error);
+// Inside the existing if (job.status === 'done' || job.status === 'failed') block, before clearInterval:
+if (job.status === 'done') log.info(`Job ${jobId}: done`);
+if (job.status === 'failed') log.error(`Job ${jobId}: failed`, job.error?.message);
 
-// On error:
+// Replace the silent catch {} block:
 catch (err) {
   log.error(`Job ${jobId}: poll error`, err);
+  if (intervalRef.current) clearInterval(intervalRef.current);
+  setState(s => ({ ...s, status: 'failed', error: 'Polling failed' }));
 }
 
-// On cleanup return:
+// In the useEffect cleanup return (already exists), add before clearInterval:
 return () => {
-  if (activeRef.current) log.info(`Stop polling job=${jobId}`);
+  if (intervalRef.current) {
+    log.info(`Stop polling job=${jobId}`);
+    clearInterval(intervalRef.current);
+  }
 };
 ```
 
@@ -870,7 +935,7 @@ import { createLogger } from '../lib/logger';
 const log = createLogger('recorder');
 
 // In startRecording, after getting stream:
-log.info(`Recording started: mimeType=${stream ? 'unknown' : 'no stream'}`);
+log.info('Recording started');
 
 // In stopRecording:
 log.info(`Recording stopped: duration=${duration}s size=${blob?.size}b`);
@@ -906,32 +971,92 @@ log.debug(`Pause: currentTime=${currentTimeRef.current?.toFixed(1)}s`);
 - [ ] **Step 4: Replace silent catches in useVoices.ts and useClips.ts**
 
 ```typescript
-// useVoices.ts
+// useVoices.ts — full updated hook
+import { useState, useEffect, useCallback } from 'react';
+import { getVoices, saveVoice, deleteVoice } from '../lib/api';
 import { createLogger } from '../lib/logger';
+
 const log = createLogger('voices');
 
-async function fetchAndSet() {
-  try {
-    const data = await getVoices();
-    setVoices(data);
-  } catch (err) {
-    log.error('Failed to fetch voices', err);
-  }
+export function useVoices() {
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getVoices();
+      setVoices(data);
+    } catch (err) {
+      log.error('Failed to fetch voices', err);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const add = useCallback(async (name: string, audio: Blob): Promise<Voice | null> => {
+    try {
+      log.info('Add voice: name=%s size=%d', name, audio.size);
+      const voice = await saveVoice(name, audio);
+      setVoices(prev => [voice, ...prev]);
+      return voice;
+    } catch (err) {
+      log.error('Add voice failed', err);
+      return null;
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    try {
+      log.info('Delete voice: id=%s', id);
+      await deleteVoice(id);
+      setVoices(prev => prev.filter(v => v.id !== id));
+    } catch (err) {
+      log.error('Delete voice failed', err);
+    }
+  }, []);
+
+  return { voices, loading, add, remove, refresh: fetch };
 }
 ```
 
 ```typescript
-// useClips.ts
+// useClips.ts — full updated hook
+import { useState, useEffect, useCallback } from 'react';
+import { getClips, deleteClip } from '../lib/api';
 import { createLogger } from '../lib/logger';
+
 const log = createLogger('clips');
 
-async function fetchAndSet() {
-  try {
-    const data = await getClips();
-    setClips(data);
-  } catch (err) {
-    log.error('Failed to fetch clips', err);
-  }
+export function useClips() {
+  const [clips, setClips] = useState<Clip[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getClips();
+      setClips(data);
+    } catch (err) {
+      log.error('Failed to fetch clips', err);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const remove = useCallback(async (id: string) => {
+    try {
+      log.info('Delete clip: id=%s', id);
+      await deleteClip(id);
+      setClips(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      log.error('Delete clip failed', err);
+    }
+  }, []);
+
+  return { clips, loading, remove, refresh: fetch };
 }
 ```
 
@@ -1095,7 +1220,7 @@ Expected: All checks pass
 
 **1. Coverage check:**
 - ✅ Backend `config.py` — LOG_LEVEL, LOG_FORMAT, LOG_FILE settings
-- ✅ Backend `main.py` — dictConfig, global exception handler, startup/shutdown logging
+- ✅ Backend `main.py` — dictConfig, global error middleware, startup/shutdown logging
 - ✅ All 6 routers — INFO on every request, WARNING on 404s, ERROR on failures
 - ✅ `nvidia_client.py` — DEBUG level per call, INFO per method, WARNING on retries, ERROR on failures, timing
 - ✅ `job_manager.py` — INFO on create/start/done/fail, DEBUG on update, INFO on cleanup

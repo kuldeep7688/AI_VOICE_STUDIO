@@ -1,5 +1,5 @@
 import { Button } from '../ui/Button';
-import { Wand2 } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   disabled: boolean;
@@ -13,7 +13,7 @@ export function GenerateButton({ disabled, isLoading, onClick }: Props) {
       {isLoading ? (
         <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
       ) : (
-        <Wand2 className="w-4 h-4" strokeWidth={1.8} />
+        <Icon name="auto_fix_high" size={16} />
       )}
       <span className="font-mono text-[11px] tracking-[0.14em] uppercase">
         {isLoading ? 'Generating...' : 'Generate'}

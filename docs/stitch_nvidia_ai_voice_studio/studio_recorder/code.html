@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Voice Studio - Studio Recorder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(19, 27, 46, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .waveform-container {
+            background: linear-gradient(180deg, #020617 0%, #0b1326 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glow-primary {
+            box-shadow: 0 0 15px rgba(148, 218, 50, 0.3);
+        }
+        .glow-error {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .knob-ui {
+            background: conic-gradient(from 180deg at 50% 50%, #171f33 0deg, #2d3449 360deg);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom scrollbar for transcript */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2d3449;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#2d3449",
+                        "on-tertiary-container": "#221eb5",
+                        "on-surface-variant": "#c1cab1",
+                        "surface-variant": "#2d3449",
+                        "secondary-fixed": "#9cf0ff",
+                        "surface": "#0b1326",
+                        "tertiary-fixed": "#e1e0ff",
+                        "on-secondary": "#00363d",
+                        "on-surface": "#dae2fd",
+                        "inverse-surface": "#dae2fd",
+                        "surface-bright": "#31394d",
+                        "tertiary-fixed-dim": "#c0c1ff",
+                        "primary-fixed-dim": "#94da32",
+                        "surface-tint": "#94da32",
+                        "on-primary": "#203700",
+                        "secondary": "#bdf4ff",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed": "#102000",
+                        "outline": "#8c947d",
+                        "on-secondary-fixed-variant": "#004f58",
+                        "error-container": "#93000a",
+                        "outline-variant": "#424936",
+                        "on-primary-fixed-variant": "#304f00",
+                        "tertiary-container": "#9b9eff",
+                        "on-tertiary": "#1000a9",
+                        "surface-dim": "#0b1326",
+                        "on-tertiary-fixed": "#07006c",
+                        "secondary-fixed-dim": "#00daf3",
+                        "on-secondary-fixed": "#001f24",
+                        "on-primary-container": "#284400",
+                        "on-tertiary-fixed-variant": "#2f2ebe",
+                        "on-error": "#690005",
+                        "primary-container": "#76b900",
+                        "on-secondary-container": "#00616d",
+                        "secondary-container": "#00e3fd",
+                        "surface-container-low": "#131b2e",
+                        "primary-fixed": "#aff74e",
+                        "on-error-container": "#ffdad6",
+                        "background": "#0b1326",
+                        "on-background": "#dae2fd",
+                        "surface-container-high": "#222a3d",
+                        "inverse-on-surface": "#283044",
+                        "tertiary": "#c0c1ff",
+                        "inverse-primary": "#416900",
+                        "primary": "#94da32",
+                        "surface-container": "#171f33"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-desktop": "32px",
+                        "panel-padding": "20px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "mono-label": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "mono-data": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "mono-label": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "mono-data": ["13px", {"lineHeight": "1.0", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-16 z-50 border-b border-white/10 bg-surface/80 backdrop-blur-xl">
+<div class="flex items-center gap-4">
+<span class="text-headline-md font-headline-md font-bold text-on-surface">AI Voice Studio</span>
+<div class="h-6 w-px bg-white/10 mx-2"></div>
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">circle</span>
+<span class="text-mono-label font-mono-label uppercase tracking-widest">Studio Engine v2.4.0</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center bg-surface-container-highest/50 px-4 py-2 rounded-full border border-white/5">
+<span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-48 text-on-surface" placeholder="Search audio assets..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-white/5 p-2 rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-white/5 p-2 rounded-full transition-colors">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img alt="User profile" class="object-cover w-full h-full" data-alt="A professional male user profile portrait for a high-tech software platform. The person is looking directly at the camera with a neutral, confident expression. The lighting is soft and directional, typical of a studio setting. The background is a clean, dark navy blue that matches a professional corporate dark-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOS0v94Ev9uOFILw8SEQJHiVocA29d_vgRQJnzJsYJQaf61ZydWdO6wiyRE_LlmGUXUFLXbbR5reimI4uG_4w1tUKds3NOoAXU2dKssFpYYHaZ-_9pftX8NTFZ9fUscjDhj6AkQwrMXtu_AvxXl-ihI6F54jfE40kQExyBtDvfftGZZX4G4pdXZM2-yUIbrUgn1sLQR9cRaNmVKrrk0uAmvR2_Pbb_z9Tl5Qf7yuLYs_bbKUmuvZF52-HeVTPhLns_pxQFAcJX9XE"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full py-panel-padding bg-surface-container-low border-r border-white/10 w-64 shrink-0">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container">mic_external_on</span>
+</div>
+<div>
+<div class="text-body-sm font-bold text-on-surface">AI Voice Studio</div>
+<div class="text-[10px] font-mono-label text-on-surface-variant uppercase">Pro Audio Engine</div>
+</div>
+</div>
+<button class="w-full bg-primary py-3 rounded-lg text-on-primary font-bold text-body-sm flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/10">
+<span class="material-symbols-outlined">add</span>
+                    New Project
+                </button>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 py-3 px-4 mx-2 bg-primary-container text-on-primary-container rounded-lg font-bold transition-all duration-200 translate-x-1" href="#">
+<span class="material-symbols-outlined">mic_external_on</span>
+<span class="text-body-sm font-body-sm">Studio</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings_voice</span>
+<span class="text-body-sm font-body-sm">Cloning</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">library_music</span>
+<span class="text-body-sm font-body-sm">Library</span>
+</a>
+</div>
+<div class="px-4 py-4 mt-auto border-t border-white/5">
+<a class="flex items-center gap-3 py-2 px-2 text-on-surface-variant hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-sm">analytics</span>
+<span class="text-mono-label font-mono-label uppercase">Status</span>
+</a>
+<a class="flex items-center gap-3 py-2 px-2 text-on-surface-variant hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-sm">help_outline</span>
+<span class="text-mono-label font-mono-label uppercase">Help</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area (Canvas) -->
+<main class="flex-1 flex flex-col relative overflow-hidden bg-surface">
+<!-- Studio Toolbar (Sub-Header) -->
+<div class="h-12 border-b border-white/5 flex items-center justify-between px-6 bg-surface-container/30">
+<div class="flex items-center gap-4">
+<span class="text-mono-data text-on-surface-variant">Project: <span class="text-on-surface">Untilted_Recording_01</span></span>
+<span class="text-xs text-on-surface-variant/40">|</span>
+<span class="text-mono-data text-on-surface-variant">48kHz / 24-bit PCM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span class="text-mono-data font-medium text-error">00:00:00:00</span>
+</div>
+</div>
+<!-- Waveform Viewport -->
+<div class="flex-1 flex flex-col p-6 gap-6">
+<div class="flex-1 relative rounded-xl overflow-hidden waveform-container flex flex-col group">
+<!-- Audio Waveform Visualization Placeholder -->
+<div class="absolute inset-0 flex items-center justify-center opacity-30">
+
+</div>
+<!-- Waveform Grid Overlay -->
+<div class="absolute inset-0 pointer-events-none" style="background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+<!-- Level Meters (Floating) -->
+<div class="absolute right-4 top-4 bottom-4 w-6 flex flex-col justify-end bg-black/40 rounded-full border border-white/5 p-1">
+<div class="w-full h-1/2 bg-gradient-to-t from-primary/60 via-primary to-error rounded-full opacity-60"></div>
+<div class="mt-2 text-[8px] text-on-surface-variant text-center font-mono-data">LR</div>
+</div>
+<!-- Waveform Controls Overlay -->
+<div class="absolute top-4 left-4 flex gap-2">
+<button class="bg-surface-container-highest/80 backdrop-blur-md border border-white/10 p-2 rounded hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-sm">zoom_in</span>
+</button>
+<button class="bg-surface-container-highest/80 backdrop-blur-md border border-white/10 p-2 rounded hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-sm">zoom_out</span>
+</button>
+</div>
+</div>
+<!-- Transport Controls -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col gap-6">
+<div class="flex items-center justify-center gap-12">
+<!-- Stop -->
+<button class="group flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full flex items-center justify-center border border-white/10 bg-white/5 group-hover:bg-white/10 transition-all active:scale-90">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface" style="font-variation-settings: 'FILL' 1;">stop</span>
+</div>
+<span class="text-mono-label font-mono-label uppercase text-[10px] text-on-surface-variant">Stop</span>
+</button>
+<!-- RECORD -->
+<button class="group flex flex-col items-center gap-3">
+<div class="w-20 h-20 rounded-full flex items-center justify-center border-4 border-error/20 bg-black glow-error transition-all hover:scale-105 active:scale-95">
+<div class="w-14 h-14 bg-error rounded-full flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-black text-3xl" style="font-variation-settings: 'FILL' 1;">mic</span>
+</div>
+</div>
+<span class="text-mono-label font-mono-label uppercase tracking-widest text-error font-bold">Record</span>
+</button>
+<!-- Pause -->
+<button class="group flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full flex items-center justify-center border border-white/10 bg-white/5 group-hover:bg-white/10 transition-all active:scale-90">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface" style="font-variation-settings: 'FILL' 1;">pause</span>
+</div>
+<span class="text-mono-label font-mono-label uppercase text-[10px] text-on-surface-variant">Pause</span>
+</button>
+</div>
+<!-- Live Transcription Preview -->
+<div class="w-full bg-black/40 border border-white/5 rounded-xl p-4 h-32 overflow-y-auto custom-scrollbar">
+<div class="flex items-center gap-2 mb-2">
+<span class="text-[10px] font-mono-label uppercase text-primary/60">Live Transcription</span>
+<div class="h-px flex-1 bg-white/5"></div>
+</div>
+<p class="text-body-sm text-on-surface-variant leading-relaxed font-mono-data">
+                            Waiting for input... Recording will start the Canary-1B transcription engine automatically.
+                            <span class="inline-block w-1 h-4 bg-primary/60 ml-1 animate-pulse"></span>
+</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Right-hand Sidebar: Processing Pipeline -->
+<aside class="w-80 shrink-0 bg-surface-container-low border-l border-white/10 flex flex-col">
+<div class="p-6 border-b border-white/10">
+<h2 class="text-headline-md font-headline-md text-on-surface mb-1">Processing Pipeline</h2>
+<p class="text-body-sm text-on-surface-variant">Define real-time studio effects</p>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-8">
+<!-- Pipeline Logic -->
+<div class="space-y-4">
+<label class="flex items-start gap-3 group cursor-pointer">
+<div class="relative mt-1">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-white/10 rounded peer-checked:bg-primary peer-checked:border-primary transition-all"></div>
+<span class="material-symbols-outlined absolute inset-0 text-on-primary text-sm font-bold scale-0 peer-checked:scale-100 transition-transform">check</span>
+</div>
+<div class="flex-1">
+<span class="text-body-sm font-medium text-on-surface group-hover:text-primary transition-colors">Clean (BNR)</span>
+<p class="text-[11px] text-on-surface-variant leading-tight">Advanced Background Noise Removal</p>
+</div>
+</label>
+<label class="flex items-start gap-3 group cursor-pointer">
+<div class="relative mt-1">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-white/10 rounded peer-checked:bg-primary peer-checked:border-primary transition-all"></div>
+<span class="material-symbols-outlined absolute inset-0 text-on-primary text-sm font-bold scale-0 peer-checked:scale-100 transition-transform">check</span>
+</div>
+<div class="flex-1">
+<span class="text-body-sm font-medium text-on-surface group-hover:text-primary transition-colors">Transcribe (Canary-1B)</span>
+<p class="text-[11px] text-on-surface-variant leading-tight">NVIDIA Ultra-low latency ASR</p>
+</div>
+</label>
+<label class="flex items-start gap-3 group cursor-pointer">
+<div class="relative mt-1">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-white/10 rounded peer-checked:bg-primary peer-checked:border-primary transition-all"></div>
+<span class="material-symbols-outlined absolute inset-0 text-on-primary text-sm font-bold scale-0 peer-checked:scale-100 transition-transform">check</span>
+</div>
+<div class="flex-1">
+<span class="text-body-sm font-medium text-on-surface group-hover:text-primary transition-colors">Translate</span>
+<div class="mt-2 relative">
+<select class="w-full bg-surface-container-highest border border-white/10 rounded-lg px-3 py-2 text-xs text-on-surface appearance-none focus:ring-1 focus:ring-secondary transition-all">
+<option>English (US)</option>
+<option selected="">French (FR)</option>
+<option>Spanish (ES)</option>
+<option>German (DE)</option>
+<option>Japanese (JP)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1.5 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</label>
+<label class="flex items-start gap-3 group cursor-pointer">
+<div class="relative mt-1">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-white/10 rounded peer-checked:bg-primary peer-checked:border-primary transition-all"></div>
+<span class="material-symbols-outlined absolute inset-0 text-on-primary text-sm font-bold scale-0 peer-checked:scale-100 transition-transform">check</span>
+</div>
+<div class="flex-1">
+<span class="text-body-sm font-medium text-on-surface group-hover:text-primary transition-colors">Re-voice</span>
+<div class="mt-2 relative">
+<select class="w-full bg-surface-container-highest border border-white/10 rounded-lg px-3 py-2 text-xs text-on-surface appearance-none focus:ring-1 focus:ring-secondary transition-all">
+<option>Select Voice</option>
+<option>Alex (Deep Mono)</option>
+<option>Sarah (Professional)</option>
+<option>AI-01 (Synthetic)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1.5 text-on-surface-variant pointer-events-none">voice_selection</span>
+</div>
+</div>
+</label>
+</div>
+<!-- Technical Parameters (DAW Style) -->
+<div class="pt-6 border-t border-white/5">
+<h3 class="text-mono-label font-mono-label uppercase text-[10px] text-on-surface-variant tracking-wider mb-4">Input Sensitivity</h3>
+<div class="flex items-center justify-around">
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 knob-ui flex items-center justify-center relative">
+<div class="absolute inset-1 border-2 border-secondary/20 rounded-full"></div>
+<div class="w-1 h-4 bg-secondary absolute top-1 rounded-full origin-bottom rotate-[-45deg]"></div>
+<span class="text-[9px] font-mono-data">Gain</span>
+</div>
+<span class="text-[10px] text-on-surface-variant font-mono-data">+12dB</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 knob-ui flex items-center justify-center relative">
+<div class="absolute inset-1 border-2 border-primary/20 rounded-full"></div>
+<div class="w-1 h-4 bg-primary absolute top-1 rounded-full origin-bottom rotate-[20deg]"></div>
+<span class="text-[9px] font-mono-data">Comp</span>
+</div>
+<span class="text-[10px] text-on-surface-variant font-mono-data">2:1</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-6 bg-surface-container-high border-t border-white/10">
+<button class="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/10">
+<span class="material-symbols-outlined">bolt</span>
+                    Run Pipeline
+                </button>
+</div>
+</aside>
+</div>
+<!-- Footer -->
+<footer class="fixed bottom-0 right-0 left-64 h-8 flex items-center justify-between px-4 z-40 bg-surface-container-lowest border-t border-white/10">
+<div class="flex items-center gap-4">
+<span class="text-mono-data font-mono-data text-secondary text-[11px]">Processing Status: <span class="text-primary">Active</span></span>
+<div class="h-3 w-px bg-white/10"></div>
+<a class="text-mono-data font-mono-data text-on-surface-variant text-[11px] hover:text-primary transition-colors" href="#">API Docs</a>
+<a class="text-mono-data font-mono-data text-on-surface-variant text-[11px] hover:text-primary transition-colors" href="#">Support</a>
+</div>
+<div class="text-mono-data font-mono-data text-on-surface-variant text-[11px]">
+            AI Voice Studio Engine v2.4.0 © 2024
+        </div>
+</footer>
+<script>
+        // Simple Micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const icon = btn.querySelector('.material-symbols-outlined');
+                if(icon) {
+                    icon.classList.add('scale-125');
+                    setTimeout(() => icon.classList.remove('scale-125'), 200);
+                }
+            });
+        });
+    </script>
+</body></html>

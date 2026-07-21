@@ -1,5 +1,5 @@
 import { Button } from '../ui/Button';
-import { Play } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   disabled: boolean;
@@ -13,7 +13,7 @@ interface Props {
 export function RunPipelineButton({ disabled, isLoading, step, stepsCompleted, totalSteps, onClick }: Props) {
   return (
     <Button onClick={onClick} variant="primary" disabled={disabled || isLoading} fullWidth>
-      <Play className="w-4 h-4" strokeWidth={1.8} />
+      <Icon name="play_arrow" size={16} />
       <span className="font-mono text-[11px] tracking-[0.14em] uppercase">
         {isLoading
           ? `Running ${step || ''} (${stepsCompleted}/${totalSteps})`

@@ -1,7 +1,6 @@
-import { Panel } from '../ui/Panel';
-import { Button } from '../ui/Button';
+import { GlassPanel } from '../ui/GlassPanel';
+import { Icon } from '../ui/Icon';
 import { WaveformBars } from '../ui/WaveformBars';
-import { Play, Trash2 } from 'lucide-react';
 
 interface Props {
   id: string;
@@ -24,30 +23,51 @@ export function VoiceCard({ id, name, filename, duration_secs, created_at, color
   const date = new Date(created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <Panel className="overflow-hidden">
-      <div className="flex">
-        <div className="w-[2px] shrink-0" style={{ backgroundColor: color }} />
-        <div className="flex-1 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-[16px] font-semibold text-[--text]">{name}</h4>
-            <button
-              onClick={() => onDelete(id)}
-              className="btn-press text-[--text-subtle] hover:text-[--danger] transition-colors"
-              aria-label={`Delete ${name}`}
-            >
-              <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-            </button>
+    <GlassPanel className="p-4 space-y-3 group relative overflow-hidden">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + '25' }}>
+            <Icon name="graphic_eq" size={20} className="text-on-surface" />
           </div>
-          <p className="font-mono text-[10px] text-[--text-muted]">
-            {duration_secs.toFixed(1)}s · {date} · zero-shot
-          </p>
-          <WaveformBars bars={DUMMY_WAVEFORM} color={color} height={32} />
-          <Button variant="secondary" fullWidth onClick={() => onPlay(audioUrl)}>
-            <Play className="w-3 h-3" strokeWidth={1.8} />
-            Play
-          </Button>
+          <div>
+            <p className="text-[14px] font-bold text-on-surface">{name}</p>
+            <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">Voice Model</span>
+          </div>
+        </div>
+        {/* Hover actions */}
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onDelete(id)}
+            className="btn-press w-7 h-7 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
+            aria-label={`Delete ${name}`}
+          >
+            <Icon name="edit" size={14} />
+          </button>
+          <button
+            onClick={() => onDelete(id)}
+            className="btn-press w-7 h-7 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
+            aria-label={`Delete ${name}`}
+          >
+            <Icon name="delete" size={14} />
+          </button>
         </div>
       </div>
-    </Panel>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => onPlay(audioUrl)}
+          className="btn-press w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0 hover:brightness-110 transition-all"
+        >
+          <Icon name="play_arrow" size={20} filled />
+        </button>
+        <div className="flex-1">
+          <WaveformBars bars={DUMMY_WAVEFORM} color={color} height={32} />
+        </div>
+      </div>
+
+      <p className="text-[10px] font-mono text-on-surface-variant">
+        {duration_secs.toFixed(1)}s · {date}
+      </p>
+    </GlassPanel>
   );
 }

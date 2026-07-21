@@ -1,0 +1,41 @@
+# PRODUCT.md
+## AI Voice Studio
+A studio-style web app for exploring Nvidia's speech and audio AI models. Record, clone, clean, transcribe, translate, and re-voice audio content.
+### MVP Features
+#### Voice Cloning
+- Upload or record a 10-15 sec voice sample
+- Type any text and hear it spoken in the sampled voice
+- Save cloned voices with names for reuse
+- Zero-shot cloning via Nvidia's magpie-tts-zeroshot
+#### Studio Recorder
+- Record audio from browser microphone with live waveform visualization
+- **Clean:** Remove background noise via BNR model
+- **Transcribe:** Convert speech to text via canary-1b ASR
+- **Translate:** Transcribe in source language, get translated text
+- **Re-voice:** Take transcribed text and regenerate with a different AI voice
+- All stages run as a configurable pipeline
+#### Library
+- **Voices:** Browse, play, rename, and delete saved voice samples
+- **Clips:** Browse, play, download, and delete generated audio clips
+### User Flows
+**Clone your voice:**
+```
+Open Voice Cloning tab -> Record 10s sample -> Name it "My Voice" -> Save
+-> Type "Hello, this is my AI voice" -> Generate -> Listen -> Save clip
+```
+**Process a recording:**
+```
+Open Studio Recorder tab -> Record audio -> Check "Clean" and "Transcribe"
+-> Run pipeline -> View cleaned audio + transcription text
+```
+**Translate and re-voice:**
+```
+Record audio -> Check "Translate" + select French -> Check "Re-voice"
+-> Pick a saved voice -> Run -> Get French audio in the cloned voice
+```
+### Future Features (post-MVP)
+- Multilingual TTS (23 languages, SSML controls, phrase book)
+- Lip-Sync Studio (video upload + audio sync + export)
+- Real-time Voice Chat (push-to-talk, streaming ASR -> LLM -> TTS)
+- Waveform editor (trim/crop segments)
+- Playlist (sequential playback queue)

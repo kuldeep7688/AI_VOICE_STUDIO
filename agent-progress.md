@@ -178,9 +178,9 @@
 
 ---
 
-## Session 6 — 2026-07-18 (Comprehensive Logging Implementation)
+## Session 6 — 2026-07-18 (Logging + Bugfixes + gRPC Plan)
 
-**Time:** ~09:50–10:02
+**Time:** ~09:50–11:45
 
 ### Done
 - **Phase 1: Backend Logging Infrastructure (7 tasks)**
@@ -198,11 +198,33 @@
   - Added `createLogger` to all 5 hooks (useJobPolling, useRecorder, useAudioPlayer, useVoices, useClips) — replaced silent catches with `log.error()`
   - Added `createLogger` to 3 screen components (VoiceCloningScreen, StudioRecorderScreen, LibraryScreen) and AppContext for user action logging
   - Created `ErrorBoundary.tsx` (class component, logs unhandled React render errors) and wrapped App in `main.tsx`
-- **Verification:** 25 backend tests pass, 11 frontend tests pass, TypeScript clean, lint passes, Vite build succeeds (236KB JS + 34KB CSS)
+- **Phase 3: Voice Recording Bugfixes**
+  - Browser DSP enabled: `echoCancellation: true`, `noiseSuppression: true`, `autoGainControl: true` in `useRecorder.ts`
+  - MediaRecorder forced to Opus codec with 128kbps bitrate (was default low-bitrate whatever browser chose)
+  - Removed time-slicing argument from `recorder.start()` — was causing lossy chunks
+  - `blobToWav()` fix 1: `new Float32Array(audioBuffer.getChannelData(0))` to copy data BEFORE `finally { audioContext.close() }` — Float32Array invalidated after close()
+  - `blobToWav()` fix 2: WAV header `numChannels = 1` (was `audioBuffer.numberOfChannels` which returned 2 for stereo decks, but data was always single-channel)
+- **Phase 4: BNR Placeholder + Sidebar Icons**
+  - Discovered all Nvidia audio models use gRPC, not REST HTTP — documented as planned
+  - `main.py`: BNR status set to `"planned"` instead of `"available"`
+  - `nvidia_client.bnr_denoise()`: raises descriptive `NvidiaAPIError(503)` with gRPC explanation
+  - `cleanup.py` POST /cleanup: returns 503 with coming-soon response
+  - `studio.py` clean step: raises clear error when BNR is unavailable
+  - `StudioRecorderScreen`: clean pipeline checkbox disabled with "(COMING SOON)" badge
+  - `Sidebar.tsx`: replaced raw `<span className="material-symbols-outlined">` with `<Icon>` component (sets `font-variation-settings` CSS var that font needs)
+- **Phase 5: gRPC Implementation Plan**
+  - Created `docs/exec-plans/active/2026-07-18-grpc-nim-client.md`
+  - Based on actual NVIDIA skills repo code patterns: `nvidia-riva-client` package, `riva.client.Auth` for gRPC auth, `ASRService.offline_recognize()` for Canary-1B, `SpeechSynthesisService.synthesize()` for Magpie TTS
+  - Covers NVCF function ID auto-discovery, sync-to-async pattern (`asyncio.to_thread`), audio format requirements
+  - Documents Magpie TTS Zeroshot access approval requirement and MaxineBNR proto caveat
+- **Phase 6: Reusable Recording Skill**
+  - Created `~/.agents/skills/clean-browser-audio-recording/SKILL.md` with all 3 fix patterns documented for reuse
+- **Verification:** 25 backend tests pass, 11 frontend tests pass, TypeScript clean, lint passes, Vite build succeeds (236KB JS + 34KB CSS), recording quality confirmed improved
 
 ### Next Steps
-- Commit all logging work
-- Run `bash init.sh` for full end-to-end check
+- Commit all work in 4 groups: logging, recording fixes, BNR+sidebar, docs
+- Implement gRPC NIM client per the plan
+- Remove COMING SOON badges and 503 placeholders once gRPC verified
 
 ### Learnings / Cautions
 - FastAPI `on_event("shutdown")` is deprecated — should migrate to lifespan handlers in future cleanup
@@ -210,3 +232,6 @@
 - With React 18+ JSX transform, `import React` is unnecessary for JSX — just import `Component`, `ReactNode`, `ErrorInfo`
 - Backend logging via Python's `logging` module works seamlessly across routers/services without DI
 - Frontend logger with `import.meta.env.DEV` auto-switches between debug (dev) and warn (prod) levels — Vite dead-code-eliminates debug calls in production build
+- **All Nvidia audio models require gRPC** (`grpc.nvcf.nvidia.com:443` with NVCF function IDs) — the REST HTTP URLs in the current nvidia_client.py are wrong and all audio endpoints will fail until rewritten
+- **Recording quality fix requires all 3 changes together:** DSP constraints + Opus 128kbps + no time-slicing — any one alone isn't enough
+- **blobToWav gotcha:** `AudioBuffer.getChannelData()` returns a live Float32Array view — must `new Float32Array(original)` to copy before `audioContext.close()` zeros it

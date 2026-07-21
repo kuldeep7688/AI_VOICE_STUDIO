@@ -1,6 +1,6 @@
 import { SectionLabel } from '../ui/SectionLabel';
 import { PipelineStageCard } from './PipelineStageCard';
-import { Zap, Activity, Languages, Wand2, ChevronRight } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   steps: string[];
@@ -13,10 +13,10 @@ interface Props {
 }
 
 const STAGES = [
-  { id: 'clean', title: 'Clean', model: 'BNR', icon: Zap },
-  { id: 'transcribe', title: 'Transcribe', model: 'canary-1b', icon: Activity },
-  { id: 'translate', title: 'Translate', model: 'canary-1b', icon: Languages },
-  { id: 'revoice', title: 'Re-voice', model: 'magpie-tts', icon: Wand2 },
+  { id: 'clean', title: 'Clean', model: 'BNR', icon: 'bolt' },
+  { id: 'transcribe', title: 'Transcribe', model: 'canary-1b', icon: 'activity' },
+  { id: 'translate', title: 'Translate', model: 'canary-1b', icon: 'translate' },
+  { id: 'revoice', title: 'Re-voice', model: 'magpie-tts', icon: 'auto_fix_high' },
 ] as const;
 
 export function PipelineStages({
@@ -44,7 +44,7 @@ export function PipelineStages({
               onToggle={() => onToggleStep(s.id)}
             />
             {i < STAGES.length - 1 && (
-              <ChevronRight className="w-4 h-4 text-[--border] shrink-0" strokeWidth={1} />
+              <Icon name="chevron_right" size={16} className="text-[--border] shrink-0" />
             )}
           </div>
         ))}

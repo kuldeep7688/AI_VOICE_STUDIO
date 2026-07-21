@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Voice Studio - Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Geist:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "primary": "#cebdff",
+                "inverse-primary": "#674bb5",
+                "surface-bright": "#393939",
+                "outline": "#948e9d",
+                "surface-variant": "#353534",
+                "secondary-fixed": "#dae8be",
+                "on-error": "#690005",
+                "surface-container-highest": "#353534",
+                "inverse-on-surface": "#313030",
+                "surface": "#131313",
+                "tertiary": "#ecbbba",
+                "on-surface-variant": "#cac4d4",
+                "on-primary-container": "#3c1989",
+                "on-tertiary-fixed": "#2f1314",
+                "on-tertiary": "#472828",
+                "outline-variant": "#494552",
+                "secondary-fixed-dim": "#becca3",
+                "surface-tint": "#cebdff",
+                "surface-container": "#201f1f",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed-variant": "#603d3e",
+                "on-background": "#e5e2e1",
+                "tertiary-fixed": "#ffdad9",
+                "on-tertiary-container": "#4c2c2c",
+                "primary-fixed": "#e8ddff",
+                "on-primary-fixed-variant": "#4f319c",
+                "on-surface": "#e5e2e1",
+                "tertiary-fixed-dim": "#ecbbba",
+                "error": "#ffb4ab",
+                "on-primary-fixed": "#21005e",
+                "tertiary-container": "#bf9292",
+                "background": "#131313",
+                "secondary-container": "#414d2e",
+                "surface-container-high": "#2a2a2a",
+                "primary-container": "#a78bfa",
+                "primary-fixed-dim": "#cebdff",
+                "on-secondary-fixed": "#141f05",
+                "surface-dim": "#131313",
+                "error-container": "#93000a",
+                "secondary": "#becca3",
+                "surface-container-low": "#1c1b1b",
+                "on-secondary-fixed-variant": "#3f4b2c",
+                "inverse-surface": "#e5e2e1",
+                "on-secondary": "#293417",
+                "surface-container-lowest": "#0e0e0e",
+                "on-secondary-container": "#b0be96",
+                "on-primary": "#381385"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+              },
+              "spacing": {
+                "sm": "8px",
+                "gutter": "24px",
+                "container-max": "1440px",
+                "md": "16px",
+                "xl": "48px",
+                "xs": "4px",
+                "lg": "24px",
+                "base": "4px",
+                "margin-desktop": "32px",
+                "panel-padding": "20px"
+              },
+              "fontFamily": {
+                "label-caps": ["Geist"],
+                "code-sm": ["Geist"],
+                "headline-md": ["Manrope"],
+                "body-lg": ["Geist"],
+                "headline-lg": ["Manrope"],
+                "headline-lg-mobile": ["Manrope"],
+                "body-md": ["Geist"],
+                "display-lg": ["Manrope"]
+              },
+              "fontSize": {
+                "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "code-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(32, 31, 31, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .waveform-preview {
+            background: linear-gradient(90deg, transparent 0%, #a78bfa 50%, transparent 100%);
+            mask-image: url('data:image/svg+xml;utf8,<svg preserveAspectRatio="none" viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="8" width="2" height="4" fill="white"/><rect x="4" y="5" width="2" height="10" fill="white"/><rect x="8" y="2" width="2" height="16" fill="white"/><rect x="12" y="6" width="2" height="8" fill="white"/><rect x="16" y="4" width="2" height="12" fill="white"/><rect x="20" y="7" width="2" height="6" fill="white"/><rect x="24" y="3" width="2" height="14" fill="white"/><rect x="28" y="9" width="2" height="2" fill="white"/><rect x="32" y="5" width="2" height="10" fill="white"/><rect x="36" y="1" width="2" height="18" fill="white"/></svg>');
+            mask-size: cover;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #353534; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #494552; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-16 z-50 fixed top-0 border-b border-outline-variant/30 bg-surface/80 backdrop-blur-xl">
+<div class="text-headline-md font-bold text-on-surface">AI Voice Studio</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant/30 rounded-full py-2 pl-10 pr-4 text-code-sm focus:outline-none focus:border-primary w-64 transition-all duration-300 placeholder:text-on-surface-variant/50" placeholder="Search library items..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-white/5 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="hover:bg-white/5 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAGNQ9k3eXWI8z0INK9XDv2B3z4INxPOyXGzUeR8Vfo6sRRBxHiZX4_PCl_-zF4cBZ_5f5VDnix5FnUMabpcD5ISgcwDwrbqch-XG5Hyz4GY5e-h1jb84EBmcfbW31ZEBuNDAL9otoueUry7zKKq7xiBeKYPVc4uliKlskK1LvsXDs_uiRwz7bDMsNk2lgQH8vZHvqlKt-yMktt8e8bufh1-wgd1Zg2PCw58E5cPU8xU37aFBk4dDubHO-tM-YFjuf2yN_goVVTUI"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex h-screen pt-16">
+<!-- SideNavBar -->
+<nav class="flex flex-col h-full py-panel-padding bg-surface-container-low border-r border-outline-variant/30 w-64 shrink-0">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">mic_external_on</span>
+</div>
+<div>
+<div class="text-code-sm font-bold text-on-surface">AI Voice Studio</div>
+<div class="text-label-caps text-on-surface-variant">PRO AUDIO ENGINE</div>
+</div>
+</div>
+<button class="w-full mt-6 bg-primary-container text-on-primary-container py-3 rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+                New Project
+            </button>
+</div>
+<div class="flex-grow space-y-1">
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">mic_external_on</span>
+<span class="text-body-md">Studio</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings_voice</span>
+<span class="text-body-md">Cloning</span>
+</a>
+<a class="bg-primary-container text-on-primary-container rounded-lg font-bold mx-2 flex items-center gap-3 py-3 px-4 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">library_music</span>
+<span class="text-body-md">Library</span>
+</a>
+</div>
+<div class="mt-auto space-y-1">
+<a class="flex items-center gap-3 py-2 px-4 mx-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined text-body-md">analytics</span>
+<span class="text-label-caps">STATUS</span>
+</a>
+<a class="flex items-center gap-3 py-2 px-4 mx-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined text-body-md">help_outline</span>
+<span class="text-label-caps">HELP</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow overflow-y-auto bg-surface p-margin-desktop">
+<div class="max-w-6xl mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+<div>
+<h1 class="text-headline-lg font-bold text-on-surface mb-2">Asset Library</h1>
+<p class="text-on-surface-variant text-body-md">Manage your custom voice models and generated audio clips.</p>
+</div>
+<!-- Segmented Control -->
+<div class="glass-panel p-1 rounded-full flex gap-1 self-start">
+<button class="px-6 py-2 rounded-full text-code-sm font-medium transition-all bg-primary-container text-on-primary-container" id="tab-saved-voices" onclick="switchTab('saved-voices')">
+                        Saved Voices
+                    </button>
+<button class="px-6 py-2 rounded-full text-code-sm font-medium transition-all text-on-surface-variant hover:text-on-surface" id="tab-generated-clips" onclick="switchTab('generated-clips')">
+                        Generated Clips
+                    </button>
+</div>
+</div>
+<!-- Saved Voices View (Grid) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter transition-all duration-300" id="view-saved-voices">
+<!-- Voice Card -->
+<div class="glass-panel rounded-xl p-5 group hover:border-primary/50 transition-all">
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">settings_voice</span>
+</div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-white/10 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 hover:bg-error/10 rounded-lg text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<h3 class="text-body-lg font-bold text-on-surface mb-1">News Anchor</h3>
+<p class="text-label-caps text-on-surface-variant mb-6 uppercase tracking-wider">Professional · Male</p>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-90 transition-transform shadow-[0_0_15px_rgba(167,139,250,0.2)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="flex-grow h-8 waveform-preview opacity-30"></div>
+</div>
+</div>
+<!-- Voice Card -->
+<div class="glass-panel rounded-xl p-5 group hover:border-primary/50 transition-all">
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-white/10 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 hover:bg-error/10 rounded-lg text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<h3 class="text-body-lg font-bold text-on-surface mb-1">My Voice</h3>
+<p class="text-label-caps text-on-surface-variant mb-6 uppercase tracking-wider">Personal · Female</p>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-90 transition-transform shadow-[0_0_15px_rgba(167,139,250,0.2)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="flex-grow h-8 waveform-preview opacity-30"></div>
+</div>
+</div>
+<!-- Add New Card -->
+<button class="border-2 border-dashed border-outline-variant/30 rounded-xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-white/5 hover:border-outline transition-all text-on-surface-variant">
+<span class="material-symbols-outlined text-headline-md">add_circle</span>
+<span class="text-code-sm font-medium">Clone New Voice</span>
+</button>
+</div>
+<!-- Generated Clips View (Table) -->
+<div class="hidden transition-all duration-300" id="view-generated-clips">
+<div class="glass-panel rounded-xl overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-highest/30">
+<tr class="text-label-caps text-on-surface-variant border-b border-outline-variant/30">
+<th class="py-4 px-6 font-medium">NAME</th>
+<th class="py-4 px-6 font-medium">DURATION</th>
+<th class="py-4 px-6 font-medium">CREATED</th>
+<th class="py-4 px-6 font-medium text-right">ACTIONS</th>
+</tr>
+</thead>
+<tbody class="text-body-md text-on-surface divide-y divide-outline-variant/10">
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]">audio_file</span>
+                                        Project_Final_v1.mp3
+                                    </div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant font-mono">02:45</td>
+<td class="py-4 px-6 text-on-surface-variant">Oct 24, 2023</td>
+<td class="py-4 px-6">
+<div class="flex justify-end gap-2">
+<button class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</button>
+<button class="p-2 hover:bg-white/10 rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+<button class="p-2 hover:bg-error/10 rounded-lg text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]">audio_file</span>
+                                        YouTube_Intro_Voiceover.wav
+                                    </div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant font-mono">00:12</td>
+<td class="py-4 px-6 text-on-surface-variant">Oct 22, 2023</td>
+<td class="py-4 px-6">
+<div class="flex justify-end gap-2">
+<button class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</button>
+<button class="p-2 hover:bg-white/10 rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+<button class="p-2 hover:bg-error/10 rounded-lg text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Empty State Message -->
+<div class="hidden py-24 flex flex-col items-center justify-center text-center" id="view-empty">
+<div class="w-24 h-24 bg-surface-container-high rounded-full flex items-center justify-center mb-6 text-on-surface-variant/20">
+<span class="material-symbols-outlined text-[48px]">folder_off</span>
+</div>
+<h2 class="text-headline-md font-bold text-on-surface mb-2">No assets found</h2>
+<p class="text-on-surface-variant text-body-md max-w-xs mb-8">Start by recording in the Studio or uploading your own audio samples.</p>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">Go to Studio</button>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="fixed bottom-0 right-0 left-64 h-8 flex items-center justify-between px-4 z-40 border-t border-outline-variant/30 bg-surface-container-lowest text-on-surface-variant/60 text-[12px] font-medium">
+<div class="flex items-center gap-4">
+<span>AI Voice Studio Engine v2.4.0</span>
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(190,204,163,0.4)]"></span>
+            Processing Status: Active
+        </span>
+</div>
+<div class="flex gap-4">
+<a class="hover:text-primary transition-colors" href="#">API Docs</a>
+<a class="hover:text-primary transition-colors" href="#">Support</a>
+</div>
+</footer>
+<script>
+    function switchTab(view) {
+        const savedTab = document.getElementById('tab-saved-voices');
+        const generatedTab = document.getElementById('tab-generated-clips');
+        const savedView = document.getElementById('view-saved-voices');
+        const generatedView = document.getElementById('view-generated-clips');
+        const emptyView = document.getElementById('view-empty');
+
+        // Reset tabs
+        [savedTab, generatedTab].forEach(t => {
+            t.classList.remove('bg-primary-container', 'text-on-primary-container');
+            t.classList.add('text-on-surface-variant', 'hover:text-on-surface');
+        });
+
+        // Reset views
+        [savedView, generatedView, emptyView].forEach(v => v.classList.add('hidden'));
+
+        if (view === 'saved-voices') {
+            savedTab.classList.add('bg-primary-container', 'text-on-primary-container');
+            savedTab.classList.remove('text-on-surface-variant', 'hover:text-on-surface');
+            savedView.classList.remove('hidden');
+        } else {
+            generatedTab.classList.add('bg-primary-container', 'text-on-primary-container');
+            generatedTab.classList.remove('text-on-surface-variant', 'hover:text-on-surface');
+            generatedView.classList.remove('hidden');
+        }
+    }
+
+    // Example interaction for search
+    const searchInput = document.querySelector('input[type="text"]');
+    searchInput.addEventListener('input', (e) => {
+        const emptyView = document.getElementById('view-empty');
+        const savedView = document.getElementById('view-saved-voices');
+        const generatedView = document.getElementById('view-generated-clips');
+        
+        if (e.target.value.toLowerCase() === 'empty') {
+            [savedView, generatedView].forEach(v => v.classList.add('hidden'));
+            emptyView.classList.remove('hidden');
+        } else if (e.target.value === '') {
+            switchTab('saved-voices');
+        }
+    });
+</script>
+</body></html>

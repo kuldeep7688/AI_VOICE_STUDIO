@@ -1,16 +1,12 @@
-import type { ComponentType, SVGProps } from 'react';
-
-type LucideIcon = ComponentType<SVGProps<SVGSVGElement>>;
-
 interface Props {
-  icon: LucideIcon;
+  icon: string;
   title: string;
   model: string;
   selected: boolean;
   onToggle: () => void;
 }
 
-export function PipelineStageCard({ icon: Icon, title, model, selected, onToggle }: Props) {
+export function PipelineStageCard({ icon, title, model, selected, onToggle }: Props) {
   return (
     <button
       onClick={onToggle}
@@ -21,7 +17,9 @@ export function PipelineStageCard({ icon: Icon, title, model, selected, onToggle
       }`}
     >
       <div className="flex items-center justify-between">
-        <Icon className={`w-4 h-4 ${selected ? 'text-[--accent]' : 'text-[--text-muted]'}`} strokeWidth={1.5} />
+        <span className={`inline-flex ${selected ? 'text-[--accent]' : 'text-[--text-muted]'}`}>
+          <span className="material-symbols-outlined text-[16px]">{icon}</span>
+        </span>
         <span
           className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] font-mono text-[10px] font-medium ${
             selected

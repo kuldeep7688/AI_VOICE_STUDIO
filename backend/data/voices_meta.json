@@ -1,56 +1,14 @@
 {
-  "9ef439c68a8c45788a8ee5f7fc490d6e": {
-    "name": "My Voice",
-    "filename": "9ef439c68a8c45788a8ee5f7fc490d6e.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:24:52.183170+00:00"
+  "fa05267328cd46599c5f8da4618ab427": {
+    "name": "something",
+    "filename": "fa05267328cd46599c5f8da4618ab427.wav",
+    "duration_secs": 5.9735,
+    "created_at": "2026-07-18T20:12:43.712701+00:00"
   },
-  "cecfedd2904f4a3595237640dbf9e229": {
-    "name": "Voice 1",
-    "filename": "cecfedd2904f4a3595237640dbf9e229.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:24:52.189272+00:00"
-  },
-  "94d0b2615c384dc7b9aab5c233931343": {
-    "name": "Test Voice",
-    "filename": "94d0b2615c384dc7b9aab5c233931343.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:24:52.219782+00:00"
-  },
-  "e7577ac022654594861732358de71629": {
-    "name": "My Voice",
-    "filename": "e7577ac022654594861732358de71629.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:35:19.127949+00:00"
-  },
-  "31c5ad426eb544f0bac7aa9f2987b20b": {
-    "name": "Voice 1",
-    "filename": "31c5ad426eb544f0bac7aa9f2987b20b.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:35:19.131699+00:00"
-  },
-  "f7dac18af9d447b399d41c2c70f8b20d": {
-    "name": "Test Voice",
-    "filename": "f7dac18af9d447b399d41c2c70f8b20d.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:35:19.158584+00:00"
-  },
-  "fa635a9be807425e9804bd2dd7be72a0": {
-    "name": "My Voice",
-    "filename": "fa635a9be807425e9804bd2dd7be72a0.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:51:55.409694+00:00"
-  },
-  "afdd29576eb14a138cab28623ba471e7": {
-    "name": "Voice 1",
-    "filename": "afdd29576eb14a138cab28623ba471e7.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:51:55.413151+00:00"
-  },
-  "c3dac3ebf78d47c7a8a22cf3078835e8": {
-    "name": "Test Voice",
-    "filename": "c3dac3ebf78d47c7a8a22cf3078835e8.wav",
-    "duration_secs": 1.0,
-    "created_at": "2026-07-07T01:51:55.443357+00:00"
+  "1d930040ca8b45dd911f8f628b33a69b": {
+    "name": "dsasdas",
+    "filename": "1d930040ca8b45dd911f8f628b33a69b.wav",
+    "duration_secs": 3.8735,
+    "created_at": "2026-07-18T20:13:09.579571+00:00"
   }
 }
