@@ -125,7 +125,11 @@ class NvidiaClient:
                     if not self._asr_function_id:
                         self._asr_function_id = fid
                         logger.info("Discovered ASR function-id=%s name=%s", fid, fn["name"])
-                elif "magpie" in name and "tts" in name:
+                elif "magpie" in name and "tts" in name and "zeroshot" in name:
+                    # tts_clone() does voice cloning via zero_shot_audio_prompt_file,
+                    # which only the zero-shot model supports — "magpie"+"tts" alone
+                    # also matches ai-magpie-tts-multilingual, which rejects our
+                    # voice_name and fails every clone request.
                     if not self._tts_function_id:
                         self._tts_function_id = fid
                         logger.info("Discovered TTS function-id=%s name=%s", fid, fn["name"])
