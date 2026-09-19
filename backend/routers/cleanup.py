@@ -14,7 +14,7 @@ router = APIRouter()
 async def _clean_task(job_id: str, audio_bytes: bytes) -> JobResult:
     logger.info("Cleanup job=%s: audio_size=%d bytes", job_id, len(audio_bytes))
     clean_audio = await nvidia_client.bnr_denoise(audio_bytes)
-    filename = save_clip(clean_audio)
+    filename = save_clip(clean_audio, name="Cleaned Audio", source_job_id=job_id)
     return JobResult(audio_url=f"/audio/clips/{filename}")
 
 

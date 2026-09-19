@@ -20,7 +20,7 @@ async def _tts_clone_task(job_id: str, voice_id: str, text: str) -> JobResult:
             raise FileNotFoundError(f"Voice {voice_id} not found")
     voice_audio = voice_path.read_bytes()
     result_audio = await nvidia_client.tts_clone(voice_audio, text)
-    filename = save_clip(result_audio)
+    filename = save_clip(result_audio, name="TTS Clone", source_job_id=job_id)
     return JobResult(audio_url=f"/audio/clips/{filename}")
 
 
