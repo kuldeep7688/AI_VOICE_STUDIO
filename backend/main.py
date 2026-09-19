@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from config import settings, get_voices_dir, get_clips_dir, get_recordings_dir
 from routers import tts, asr, cleanup, studio, library, jobs
+from nvidia_client import nvidia_client
 
 for d in [get_voices_dir(), get_clips_dir(), get_recordings_dir()]:
     d.mkdir(parents=True, exist_ok=True)
@@ -97,10 +98,15 @@ def list_models():
     return [
         {"id": "magpie-tts-zeroshot", "name": "Magpie TTS Zero-Shot", "type": "tts", "status": "available"},
         {"id": "canary-1b-asr", "name": "Canary 1B ASR", "type": "asr", "status": "available"},
-        {"id": "bnr", "name": "Background Noise Removal", "type": "cleanup", "status": "planned"},
+        {"id": "bnr", "name": "Background Noise Removal", "type": "cleanup", "status": "available"},
     ]
 
 
 @app.on_event("shutdown")
 async def shutdown():
     logger.info("Shutting down AI Voice Studio")
+
+
+@app.on_event("startup")
+async def startup():
+    await nvidia_client.resolve_function_ids()

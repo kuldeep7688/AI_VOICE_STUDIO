@@ -100,11 +100,13 @@ def bnr_denoise(
         print(f"  sample rate: {sample_rate} Hz")
 
     with grpc.secure_channel(target=target, credentials=credentials) as channel:
-        response = channel.stream_stream(
-            _generate_request_transactional(wav_bytes, intensity_ratio),
+        stream_method = channel.stream_stream(
             _ENHANCE_AUDIO_METHOD,
             bnr_pb2.EnhanceAudioRequest.SerializeToString,
             bnr_pb2.EnhanceAudioResponse.FromString,
+        )
+        response = stream_method(
+            _generate_request_transactional(wav_bytes, intensity_ratio),
             metadata=tuple(metadata),
         )
 

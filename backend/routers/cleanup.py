@@ -1,6 +1,5 @@
 import logging
 from fastapi import APIRouter, UploadFile, File
-from fastapi.responses import JSONResponse
 import asyncio
 from models import JobCreatedResponse, JobResult
 from job_manager import job_manager
@@ -24,8 +23,5 @@ async def clean_audio(audio: UploadFile = File(...)):
     audio_bytes = await audio.read()
     job_id = job_manager.create_job()
     logger.info("Clean request: filename=%s size=%d -> job=%s", audio.filename or "unknown", len(audio_bytes), job_id)
-    logger.warning("Clean endpoint: BNR not yet available")
-    return JSONResponse(
-        status_code=503,
-        content={"detail": "BNR background noise removal is not yet available. Coming soon."},
-    )
+    asyncio.ensure_future(job_manager.run_job(job_id, _clean_task, audio_bytes))
+    return JobCreatedResponse(job_id=job_id, status="queued")
