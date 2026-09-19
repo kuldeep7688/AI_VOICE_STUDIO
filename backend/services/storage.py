@@ -1,11 +1,15 @@
+import json
 import uuid
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from config import settings
-from services.audio_service import validate_wav
+from services.audio_service import validate_wav, get_duration_secs
 
 logger = logging.getLogger(__name__)
+
+CLIPS_META_FILE = Path("data/clips_meta.json")
 
 
 class StorageError(Exception):
@@ -17,6 +21,17 @@ def _ensure_dir(d: Path) -> Path:
     return d
 
 
+def load_clips_meta() -> dict:
+    if not CLIPS_META_FILE.exists():
+        return {}
+    return json.loads(CLIPS_META_FILE.read_text())
+
+
+def save_clips_meta(meta: dict):
+    CLIPS_META_FILE.parent.mkdir(parents=True, exist_ok=True)
+    CLIPS_META_FILE.write_text(json.dumps(meta, indent=2))
+
+
 def save_voice(audio_bytes: bytes) -> str:
     validate_wav(audio_bytes, max_duration_secs=settings.max_voice_sample_duration_secs)
     filename = f"{uuid.uuid4().hex}.wav"
@@ -26,11 +41,26 @@ def save_voice(audio_bytes: bytes) -> str:
     return filename
 
 
-def save_clip(audio_bytes: bytes) -> str:
+def save_clip(audio_bytes: bytes, name: str = "Clip", source_job_id: str = "") -> str:
     filename = f"{uuid.uuid4().hex}.wav"
     dest = _ensure_dir(Path(settings.storage_dir) / "clips") / filename
     dest.write_bytes(audio_bytes)
     logger.info("Clip saved: filename=%s size=%d", filename, len(audio_bytes))
+
+    # Every generated clip (TTS output, cleaned audio, pipeline results) must
+    # also register in clips_meta.json — otherwise GET/DELETE /api/clips can
+    # never find it, since library.py reads exclusively from that index and
+    # nothing else ever wrote to it.
+    clip_id = filename.replace(".wav", "")
+    meta = load_clips_meta()
+    meta[clip_id] = {
+        "name": name,
+        "filename": filename,
+        "duration_secs": get_duration_secs(audio_bytes),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "source_job_id": source_job_id,
+    }
+    save_clips_meta(meta)
     return filename
 
 

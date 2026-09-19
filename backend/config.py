@@ -5,6 +5,10 @@ from pathlib import Path
 class Settings(BaseSettings):
     nvidia_api_key: str = ""
     api_base_url: str = "https://api.nvidia.com/v1"
+    grpc_server: str = "grpc.nvcf.nvidia.com:443"
+    tts_function_id: str = ""
+    asr_function_id: str = ""
+    bnr_function_id: str = ""
     storage_dir: str = "./uploads"
     max_upload_size_bytes: int = 16 * 1024 * 1024
     max_recording_duration_secs: int = 60

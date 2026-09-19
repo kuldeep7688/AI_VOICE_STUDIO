@@ -33,8 +33,10 @@ async def _pipeline_task(
         job_manager.update_job(job_id, step=step.value, steps_completed=i, progress=int(i / total_steps * 100))
 
         if step == PipelineStep.clean:
-            logger.warning("Pipeline job=%s: BNR clean step not yet available", job_id)
-            raise ValueError("BNR background noise removal is not yet available. Coming soon.")
+            clean_audio = await nvidia_client.bnr_denoise(current_audio)
+            filename = save_clip(clean_audio, name="Studio Pipeline — Cleaned", source_job_id=job_id)
+            current_audio = clean_audio
+            result.audio_url = f"/audio/clips/{filename}"
 
         elif step == PipelineStep.transcribe:
             text = await nvidia_client.asr_transcribe(current_audio)
@@ -61,7 +63,7 @@ async def _pipeline_task(
                 raise ValueError("No text available for revoice (need transcribe or translate step first)")
             logger.info("Pipeline job=%s: revoice voice=%s text_len=%d", job_id, voice_id, len(text_to_speak))
             revoiced_audio = await nvidia_client.tts_clone(voice_audio, text_to_speak)
-            filename = save_clip(revoiced_audio)
+            filename = save_clip(revoiced_audio, name="Studio Pipeline — Re-voiced", source_job_id=job_id)
             result.audio_url = f"/audio/clips/{filename}"
 
     job_manager.update_job(job_id, steps_completed=total_steps, progress=100)

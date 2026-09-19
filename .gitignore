@@ -35,8 +35,9 @@ Thumbs.db
 # MCP
 .playwright-mcp/
 
-# Generated uploads
+# Generated uploads + runtime metadata (per-user library state — never shipped in the repo)
 backend/uploads/
+backend/data/*.json
 
 # Test cache
 .pytest_cache/

@@ -145,7 +145,7 @@ export function StudioRecorderScreen() {
 
             {/* Pipeline checkboxes */}
             {[
-              { id: 'clean', label: 'Clean', desc: 'BNR', disabled: true },
+              { id: 'clean', label: 'Clean', desc: 'BNR', disabled: false },
               { id: 'transcribe', label: 'Transcribe', desc: 'Canary-1B', disabled: false },
               { id: 'translate', label: 'Translate', desc: 'Canary-1B', disabled: false },
               { id: 'revoice', label: 'Re-voice', desc: 'magpie-tts', disabled: false },
